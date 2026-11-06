@@ -1,0 +1,46 @@
+# Yadalingo
+
+A Mandarin memory keeper and practice partner. Learners list the phrases they already know, review them by ear with spaced repetition, and chat with **Mei** (powered by Google Gemini). All Chinese is shown in **pinyin only**, never characters.
+
+## Run it (pnpm only)
+
+```
+pnpm install
+pnpm prisma migrate dev --name init
+pnpm dev
+```
+
+Open http://localhost:3000. Smoke-test Gemini at `/test-ai`.
+
+## Environment variables (`.env`, never commit)
+
+| Name | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string (e.g. Neon) |
+| `NEXTAUTH_SECRET` | Random secret (`pnpm dlx auth secret`) |
+| `NEXTAUTH_URL` | App URL, `http://localhost:3000` locally |
+| `GEMINI_API_KEY` | Google Gemini key (server only) |
+
+## Where things live
+
+- `lib/config.ts`: per-user limits (daily Mei messages etc.). Plans plug in here later.
+- `lib/ai/config.ts`: the Gemini model name.
+- `lib/mei/prompt.ts`: Mei's system prompt.
+- `lib/srs.ts`: spaced repetition (1, 2, 4... up to 30 days; wrong resets to 1).
+
+### Add a hint card
+1. Add an entry to `lib/data/hints.ts`.
+2. Add a keyword matcher for it in `lib/hints.ts` (`detectHints`).
+
+### Add a starter phrase
+Add `{ pinyin, meaning, speechText }` to `lib/data/starterPhrases.ts`. `speechText` is hidden Chinese used only for audio and is never displayed.
+
+## Deploy to Vercel
+
+1. Push to GitHub and import the repo in Vercel.
+2. Add the four environment variables above (set `NEXTAUTH_URL` to your production domain).
+3. Run once against the production database: `pnpm prisma migrate deploy`.
+4. Set your production domain in Vercel.
+
+## Phone checklist
+Sign up, add phrases, open a hint card, play a phrase, finish a review, chat with Mei, sign out and back in.

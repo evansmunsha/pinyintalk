@@ -1,0 +1,51 @@
+"use client";
+
+import { signUpAction } from "@/app/actions/auth";
+import Link from "next/link";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+const input =
+  "mt-1 block min-h-12 w-full rounded-xl border border-stone-300 bg-white px-3 text-lg focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50";
+
+export default function SignUpPage() {
+  const [state, formAction, pending] = useActionState(signUpAction, null);
+  const router = useRouter();
+
+  useEffect(() => {
+    if (state?.success) router.push("/onboarding");
+  }, [state, router]);
+
+  return (
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-4 py-8">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-teal-700">Yadalingo</h1>
+        <p className="mt-1 text-xl text-stone-600">nǐ hǎo</p>
+        <h2 className="mt-4 text-2xl font-bold">Create your account</h2>
+      </div>
+
+      <form action={formAction} className="space-y-4">
+        {state?.error && <p className="rounded-xl bg-red-50 px-4 py-3 text-red-700">{state.error}</p>}
+        <label className="block text-sm font-medium text-stone-700">
+          Name
+          <input name="name" type="text" required disabled={pending} autoComplete="name" className={input} />
+        </label>
+        <label className="block text-sm font-medium text-stone-700">
+          Email
+          <input name="email" type="email" required disabled={pending} autoComplete="email" className={input} />
+        </label>
+        <label className="block text-sm font-medium text-stone-700">
+          Password (8+ characters)
+          <input name="password" type="password" required minLength={8} disabled={pending} autoComplete="new-password" className={input} />
+        </label>
+        <button disabled={pending} className="min-h-12 w-full rounded-xl bg-teal-600 text-lg font-semibold text-white disabled:opacity-60">
+          {pending ? "Creating account..." : "Sign up"}
+        </button>
+        <p className="text-center text-stone-600">
+          Already have an account?{" "}
+          <Link href="/signin" className="font-medium text-teal-700">Sign in</Link>
+        </p>
+      </form>
+    </main>
+  );
+}

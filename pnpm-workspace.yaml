@@ -1,3 +1,9 @@
 allowBuilds:
+  '@google/genai': false
+  '@prisma/engines': false
+  protobufjs: false
+  esbuild: false
+  prisma: false
   sharp: false
   unrs-resolver: false
+  workerd: false

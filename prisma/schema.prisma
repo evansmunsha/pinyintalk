@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  password  String
+  name      String
+  createdAt DateTime   @default(now())
+  phrases   Phrase[]
+  meiUsage  MeiUsage[]
+}
+
+// A phrase the learner already knows. Everything shown in the UI is pinyin.
+model Phrase {
+  id            String   @id @default(cuid())
+  userId        String
+  pinyin        String
+  meaning       String
+  note          String?
+  // Hidden Chinese text used ONLY for audio. Never render it in the UI.
+  speechText    String?
+  hintKey       String?
+  createdAt     DateTime @default(now())
+  nextReviewAt  DateTime @default(now())
+  intervalDays  Int      @default(1)
+  correctCount  Int      @default(0)
+  wrongCount    Int      @default(0)
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, nextReviewAt])
+}
+
+// One row per user per day, used for the daily Mei message limit.
+model MeiUsage {
+  id     String @id @default(cuid())
+  userId String
+  day    String
+  count  Int    @default(0)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, day])
+}
