@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { AskQuestion } from "@/components/AskQuestion";
+import { AudioClip } from "@/components/AudioClip";
 import { Bi } from "@/components/Bi";
 import { Pinyin } from "@/components/Pinyin";
+import { TeacherReplyForm } from "@/components/TeacherReplyForm";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 import { T, type Label } from "@/lib/ui-text";
@@ -9,12 +11,15 @@ import { T, type Label } from "@/lib/ui-text";
 const LEVEL_LABEL: Record<string, Label> = { beginner: T.beginner, tones: T.tones, travel: T.travel };
 
 export default async function CommunityPage() {
-  await requireUserId();
-  const questions = await prisma.communityQuestion.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 30,
-    include: { user: { select: { name: true } }, responses: { orderBy: { createdAt: "asc" } } },
-  });
+  const userId = await requireUserId();
+  const [user, questions] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { isTeacher: true } }),
+    prisma.communityQuestion.findMany({
+      orderBy: { createdAt: "desc" },
+      take: 30,
+      include: { user: { select: { name: true } }, responses: { orderBy: { createdAt: "asc" } } },
+    }),
+  ]);
 
   return (
     <div className="space-y-5">
@@ -37,6 +42,7 @@ export default async function CommunityPage() {
               <span className="rounded-full bg-stone-100 px-3 py-1"><Bi label={LEVEL_LABEL[q.level] ?? T.beginner} /></span>
             </div>
             <p className="break-words text-xl font-semibold"><Pinyin text={q.text} /></p>
+            {q.voiceNoteUrl && <AudioClip src={q.voiceNoteUrl} label={{ py: "xuéshēng lùyīn", en: "Learner voice note" }} />}
             {q.responses.length === 0 ? (
               <p className="text-stone-500"><Bi label={T.waitingTeacher} align="start" /></p>
             ) : (
@@ -45,9 +51,11 @@ export default async function CommunityPage() {
                   <p className="text-teal-800"><Bi label={T.teacherReply} align="start" /></p>
                   <p className="mt-1 break-words">{r.text}</p>
                   {r.examplePinyin && <p className="mt-1 break-words text-xl font-semibold"><Pinyin text={r.examplePinyin} /></p>}
+                  {r.voiceNoteUrl && <AudioClip src={r.voiceNoteUrl} label={{ py: "lǎoshī lùyīn", en: "Teacher voice note" }} />}
                 </div>
               ))
             )}
+            {user?.isTeacher && <TeacherReplyForm questionId={q.id} />}
           </article>
         ))
       )}
