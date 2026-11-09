@@ -1,6 +1,12 @@
-// Single place to change the Gemini model (checked against the official Gemini docs).
-export const GEMINI_MODEL = "gemini-3.5-flash-lite";
+// Single place to change Gemini model names (checked against the official Gemini docs).
+export const GEMINI_MODEL = "gemini-3.5-flash-lite"; // chat + audio understanding
+export const GEMINI_TTS_MODEL = "gemini-3.8-flash-lite-tts"; // text-to-speech
+export const GEMINI_LISTEN_MODEL = "gemini-3.5-flash-lite"; // speech-to-text (audio input)
+
+// Prebuilt TTS voices. Mei speaks Mandarin and then explains in English.
+export const VOICES = { zh: "Kore", en: "Kore" } as const;
 
 // Keep replies short and cheap.
 export const GEMINI_MAX_OUTPUT_TOKENS = 300;
-export const MEI_MAX_OUTPUT_TOKENS = 600;
+export const MEI_MAX_OUTPUT_TOKENS = 1024;
+export const TALK_MAX_OUTPUT_TOKENS = 768;

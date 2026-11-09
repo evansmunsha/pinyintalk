@@ -3,7 +3,8 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { LIMITS } from "@/lib/config";
-import { friendlyAiError } from "@/lib/gemini";
+import { GEMINI_MODEL } from "@/lib/ai/config";
+import { aiErrorResponse } from "@/lib/gemini";
 import { askMei } from "@/lib/mei/reply";
 
 // The client sends ONLY the chat messages. Model and system prompt stay on the server.
@@ -57,10 +58,6 @@ export async function POST(request: Request) {
       remaining: Math.max(LIMITS.meiDailyMessages - updated.count, 0),
     });
   } catch (error) {
-    if (error instanceof SyntaxError || error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Mei got confused. Please try again." }, { status: 502 });
-    }
-    const { message, status } = friendlyAiError(error);
-    return NextResponse.json({ error: message }, { status });
+    return aiErrorResponse("mei", GEMINI_MODEL, error);
   }
 }

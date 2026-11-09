@@ -1,8 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { useMeiVoice } from "@/lib/useMeiVoice";
+import { useEffect, useRef, useState } from "react";
+import { Bi, ErrorBox } from "@/components/Bi";
+import { Pinyin } from "@/components/Pinyin";
+import { useMeiVoice, warmUpCommonClips } from "@/lib/useMeiVoice";
 import { useRecorder } from "@/lib/useRecorder";
+import { T, recording, type Label } from "@/lib/ui-text";
 
 type Heard = { pinyin: string; english: string };
 type MeiSaid = { pinyin: string; speech?: string; english: string };
@@ -18,6 +21,10 @@ export function VoiceLoop() {
   const [error, setError] = useState("");
   const history = useRef<{ role: "user" | "model"; text: string }[]>([]);
 
+  useEffect(() => {
+    warmUpCommonClips();
+  }, []);
+
   const status: Status = rec.state === "recording" ? "recording" : busy ? "thinking" : voice.speaking ? "speaking" : "ready";
 
   const partsOf = (m: MeiSaid) => [
@@ -26,29 +33,30 @@ export function VoiceLoop() {
   ];
 
   async function handle(blob: Blob | null) {
-    if (!blob) return setError("I didn't catch that, try again.");
+    if (!blob) return setError("The recording was empty or could not be read. Hold the phone near you, speak for 2+ seconds, then tap to stop.");
     setBusy(true);
     setError("");
+    const t0 = performance.now();
     try {
       const form = new FormData();
       form.append("audio", blob, "speech.wav");
-      const l = await fetch("/api/voice/listen", { method: "POST", body: form });
-      const heardData = await l.json();
-      if (!l.ok) throw new Error(heardData.error ?? "Could not understand the recording");
-      setHeard(heardData);
+      form.append("history", JSON.stringify(history.current.slice(-6)));
+      const res = await fetch("/api/voice/listen", { method: "POST", body: form });
+      const data = await res.json();
+      if (!res.ok) throw new Error([data.error ?? "Could not understand the recording", data.detail].filter(Boolean).join(" — "));
+      const tGemini = performance.now() - t0;
 
-      history.current.push({ role: "user", text: heardData.pinyin });
-      const r = await fetch("/api/voice/reply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history.current.slice(-10) }),
-      });
-      const replyData = await r.json();
-      if (!r.ok) throw new Error(replyData.error ?? "Mei could not reply");
-      history.current.push({ role: "model", text: `${replyData.reply.pinyin} (${replyData.reply.english})` });
-      setSaid(replyData.reply);
+      history.current.push({ role: "user", text: data.heard.pinyin });
+      history.current.push({ role: "model", text: `${data.reply.pinyin} (${data.reply.english})` });
+      setHeard(data.heard);
+      setSaid(data.reply);
       setBusy(false);
-      await voice.play(partsOf(replyData.reply));
+
+      // Both speech clips are requested at the same time; playback starts when the first is ready.
+      const tPlay = performance.now();
+      const done = voice.play(partsOf(data.reply));
+      await done;
+      console.log(`[timing] listen+reply ${Math.round(tGemini)}ms, speak ${Math.round(performance.now() - tPlay)}ms, total ${Math.round(performance.now() - t0)}ms`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -62,7 +70,8 @@ export function VoiceLoop() {
     await rec.start(handle);
   }
 
-  const label = { ready: "Tap to talk", recording: `Recording… ${rec.seconds}s (tap to stop)`, thinking: "Mei is thinking…", speaking: "Mei is speaking…" }[status];
+  const label: Label =
+    status === "recording" ? recording(rec.seconds) : status === "thinking" ? T.thinking : status === "speaking" ? T.speaking : T.tapToTalk;
 
   return (
     <div className="space-y-5">
@@ -71,45 +80,51 @@ export function VoiceLoop() {
           className={`flex h-28 w-28 items-center justify-center rounded-full text-5xl text-white shadow-lg ${status === "recording" ? "animate-pulse bg-red-600" : "bg-teal-600"} disabled:opacity-60`}>
           🎤
         </button>
-        <p className="font-medium text-stone-700">{label}</p>
+        <div className="flex items-center gap-2 text-lg text-stone-700" role="status" aria-live="polite">
+          <Bi label={label} />
+          {status === "thinking" && (
+            <span className="flex gap-1" aria-hidden>
+              {[0, 150, 300].map((d) => (
+                <span key={d} className="h-2.5 w-2.5 animate-bounce rounded-full bg-teal-600" style={{ animationDelay: `${d}ms` }} />
+              ))}
+            </span>
+          )}
+        </div>
       </div>
 
       {rec.state === "blocked" && (
-        <div className="rounded-2xl bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-semibold">The microphone is blocked.</p>
-          <p>Android (Chrome): tap the lock icon next to the address, then Permissions, then allow Microphone.</p>
-          <p>iPhone (Safari): Settings, Safari, Microphone, then choose Ask or Allow, and reload the page.</p>
-        </div>
+        <div className="rounded-2xl bg-amber-50 p-4 text-amber-900"><Bi label={T.micBlocked} align="start" /></div>
       )}
-      {rec.state === "error" && <p className="rounded-xl bg-red-50 p-3 text-red-800">Could not use the microphone on this device.</p>}
-      {error && <p className="rounded-xl bg-red-50 p-3 text-red-800">{error}</p>}
+      {rec.state === "error" && (
+        <div className="rounded-xl bg-red-50 p-3 text-red-800"><Bi label={T.micFailed} align="start" /></div>
+      )}
+      <ErrorBox message={error} />
 
       {heard && (
         <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <p className="text-sm text-stone-500">You said:</p>
-          <p className="text-xl font-semibold">{heard.pinyin}</p>
-          <p className="text-stone-600">{heard.english}</p>
+          <p className="text-sm text-stone-500"><Bi label={T.youSaid} align="start" /></p>
+          <p className="text-2xl font-semibold"><Pinyin text={heard.pinyin} /></p>
+          <p className="text-sm text-stone-600">{heard.english}</p>
         </div>
       )}
 
       {said && (
         <div className="space-y-2 rounded-2xl bg-teal-50 p-4">
-          <p className="text-sm text-teal-800">Mei said:</p>
-          <p className="break-words text-2xl font-semibold text-teal-950">{said.pinyin}</p>
-          <p className="text-stone-700">{said.english}</p>
+          <p className="text-sm text-teal-800"><Bi label={T.meiSaid} align="start" /></p>
+          <p className="break-words text-3xl font-semibold text-teal-950"><Pinyin text={said.pinyin} /></p>
+          <p className="text-sm text-stone-700">{said.english}</p>
           <div className="flex flex-wrap gap-2 pt-1">
-            <button onClick={() => voice.play([partsOf(said)[0]])} className="min-h-11 rounded-full border border-teal-300 bg-white px-4">▶ Replay Mandarin</button>
-            <button onClick={() => voice.play([partsOf(said)[0]], true)} className="min-h-11 rounded-full border border-teal-300 bg-white px-4">🐢 Slow</button>
-            <button onClick={() => voice.play([partsOf(said)[1]])} className="min-h-11 rounded-full border border-teal-300 bg-white px-4">▶ Replay English</button>
+            <button onClick={() => voice.play([partsOf(said)[0]])} className="min-h-11 rounded-full border border-teal-300 bg-white px-4">▶ <Bi label={T.replay} className="inline-flex" /></button>
+            <button onClick={() => voice.play([partsOf(said)[0]], true)} className="min-h-11 rounded-full border border-teal-300 bg-white px-4">🐢 <Bi label={T.slow} className="inline-flex" /></button>
+            <button onClick={() => voice.play([partsOf(said)[1]])} className="min-h-11 rounded-full border border-teal-300 bg-white px-4">▶ <Bi label={T.replayEnglish} className="inline-flex" /></button>
           </div>
         </div>
       )}
 
       {voice.fallbackUsed && (
-        <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-          Mei&apos;s Gemini voice was not available, so your phone&apos;s built-in voice is used instead.
-          {voice.error ? ` (${voice.error})` : ""}
-        </p>
+        <div className="rounded-xl bg-amber-50 p-3 text-amber-900">
+          <Bi label={{ py: T.voiceFallback.py, en: `${T.voiceFallback.en}${voice.error ? ` (${voice.error})` : ""}` }} align="start" />
+        </div>
       )}
     </div>
   );

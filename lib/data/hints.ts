@@ -2,6 +2,7 @@
 // To add a hint: add an object here, then add a matcher for it in lib/hints.ts.
 export type Hint = {
   key: string;
+  titlePinyin: string;
   title: string;
   body: string;
   examples: { pinyin: string; english: string }[];
@@ -10,6 +11,7 @@ export type Hint = {
 export const HINTS: Record<string, Hint> = {
   ma: {
     key: "ma",
+    titlePinyin: "Yòng ma tíwèn",
     title: "ma makes a question",
     body: 'Put "ma" at the end of a statement to turn it into a yes or no question.',
     examples: [
@@ -19,6 +21,7 @@ export const HINTS: Record<string, Hint> = {
   },
   bu: {
     key: "bu",
+    titlePinyin: "Bù hé bú",
     title: "bù means not",
     body: 'Use "bù" to say "not" in the present and future, or when you do not want to do something. Tone note: bù changes to bú before a fourth-tone word.',
     examples: [
@@ -29,6 +32,7 @@ export const HINTS: Record<string, Hint> = {
   },
   meiyou: {
     key: "meiyou",
+    titlePinyin: "Méiyǒu",
     title: "méiyǒu means did not",
     body: 'Use "méiyǒu" to say something did not happen, or you have not done it.',
     examples: [
@@ -41,6 +45,7 @@ export const HINTS: Record<string, Hint> = {
   },
   wordOrder: {
     key: "wordOrder",
+    titlePinyin: "Cíxù",
     title: "word order",
     body: "Chinese goes: subject, then time, then place, then verb.",
     examples: [
@@ -52,6 +57,7 @@ export const HINTS: Record<string, Hint> = {
   },
   questionWords: {
     key: "questionWords",
+    titlePinyin: "Yíwèncí",
     title: "question words",
     body: "Shénme (what), nǎge (which) and nǎlǐ (where) go where the answer would go, after the verb. Shénme shíhou (when), wèishénme (why) and zěnme (how) go before the verb.",
     examples: [
@@ -63,6 +69,7 @@ export const HINTS: Record<string, Hint> = {
   },
   timeQuestion: {
     key: "timeQuestion",
+    titlePinyin: "Shíjiān hé yíwèncí",
     title: "time with question words",
     body: "The time phrase comes before the question word.",
     examples: [{ pinyin: "nǐ míngtiān zěnme qù?", english: "How are you going tomorrow?" }],

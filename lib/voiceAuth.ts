@@ -8,3 +8,9 @@ export async function voiceAllowed(): Promise<boolean> {
   const session = await auth();
   return !!session?.user?.id;
 }
+
+// The signed-in user's id, or null (for example on the public test page). Used to save conversations.
+export async function voiceUserId(): Promise<string | null> {
+  const session = await auth();
+  return session?.user?.id ?? null;
+}

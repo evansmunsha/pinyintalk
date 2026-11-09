@@ -3,10 +3,13 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { recordAnswerAction } from "@/app/actions/phrases";
+import { Bi } from "@/components/Bi";
 import { HintCards } from "@/components/HintCards";
+import { Pinyin } from "@/components/Pinyin";
 import { FILLER_MEANINGS } from "@/lib/data/starterPhrases";
 import { useSpeech } from "@/lib/useSpeech";
 import type { PhraseDTO } from "@/lib/types";
+import { T, progress, sessionScore } from "@/lib/ui-text";
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -40,12 +43,12 @@ export function ReviewGame({ due, all }: { due: PhraseDTO[]; all: PhraseDTO[] })
     return (
       <div className="space-y-5 py-8 text-center">
         <p className="text-5xl">🎉</p>
-        <h1 className="text-2xl font-bold">Session done</h1>
-        <p className="text-lg">{right} right · best streak {best}</p>
-        <Link href="/review" onClick={() => location.reload()} className="block min-h-12 rounded-xl bg-teal-600 py-3 text-lg font-semibold text-white">
-          Practise again
+        <h1 className="text-2xl"><Bi label={T.sessionDone} /></h1>
+        <p className="text-lg"><Bi label={sessionScore(right, best)} /></p>
+        <Link href="/review" onClick={() => location.reload()} className="block min-h-12 rounded-xl bg-teal-600 py-3 text-lg text-white">
+          <Bi label={T.practiseAgain} />
         </Link>
-        <Link href="/dashboard" className="block min-h-12 rounded-xl border border-stone-300 py-3 text-lg">Done</Link>
+        <Link href="/dashboard" className="block min-h-12 rounded-xl border border-stone-300 py-3 text-lg"><Bi label={T.done} /></Link>
       </div>
     );
   }
@@ -71,15 +74,15 @@ export function ReviewGame({ due, all }: { due: PhraseDTO[]; all: PhraseDTO[] })
   const speechText = current.speechText ?? current.pinyin;
   return (
     <div className="space-y-5">
-      <p className="text-sm text-stone-500">{index + 1} of {queue.length} · streak {streak}</p>
+      <p className="text-sm text-stone-500"><Bi label={progress(index + 1, queue.length, streak)} align="start" /></p>
       <div className="flex flex-col items-center gap-3 rounded-3xl bg-white p-6 shadow-sm">
         <button onClick={() => speak(speechText)} aria-label="Play phrase"
           className="flex h-24 w-24 items-center justify-center rounded-full bg-teal-600 text-4xl text-white active:bg-teal-700">▶</button>
-        <p className="text-stone-600">Listen, then pick the meaning</p>
+        <p className="text-stone-600"><Bi label={T.listenPick} /></p>
         <button onClick={() => setSlow(!slow)} className="min-h-11 rounded-full border border-stone-300 px-4 text-sm">
-          Speed: {slow ? "slow" : "normal"}
+          <Bi label={{ py: `${T.speed.py}: ${slow ? T.slow.py : T.normal.py}`, en: `${T.speed.en}: ${slow ? T.slow.en : T.normal.en}` }} />
         </button>
-        {noVoice && <p className="text-center text-sm text-amber-800">No Mandarin voice found on this device. Check your phone&apos;s text-to-speech settings.</p>}
+        {noVoice && <p className="text-center text-sm text-amber-800"><Bi label={T.noVoice} /></p>}
       </div>
 
       <div className="space-y-2">
@@ -95,16 +98,16 @@ export function ReviewGame({ due, all }: { due: PhraseDTO[]; all: PhraseDTO[] })
 
       {picked && (
         <div className="space-y-3">
-          <p className={`text-lg font-semibold ${picked === current.meaning ? "text-green-700" : "text-red-700"}`}>
-            {picked === current.meaning ? "Correct!" : "Not quite"}
+          <p className={`text-lg ${picked === current.meaning ? "text-green-700" : "text-red-700"}`}>
+            <Bi label={picked === current.meaning ? T.correct : T.notQuite} align="start" />
           </p>
           <div className="rounded-2xl bg-teal-50 p-4">
-            <p className="text-2xl font-semibold text-teal-900">{current.pinyin}</p>
-            <p className="text-stone-700">{current.meaning}</p>
+            <p className="text-2xl font-semibold text-teal-900"><Pinyin text={current.pinyin} /></p>
+            <p className="text-sm text-stone-700">{current.meaning}</p>
             <HintCards pinyin={current.pinyin} />
           </div>
           <button onClick={() => { setPicked(null); setIndex((i) => i + 1); }}
-            className="min-h-12 w-full rounded-xl bg-teal-600 text-lg font-semibold text-white">Next</button>
+            className="min-h-12 w-full rounded-xl bg-teal-600 text-lg text-white"><Bi label={T.next} /></button>
         </div>
       )}
     </div>

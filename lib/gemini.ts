@@ -1,6 +1,10 @@
 import "server-only";
-import { GoogleGenAI } from "@google/genai";
+import { NextResponse } from "next/server";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { GEMINI_MAX_OUTPUT_TOKENS, GEMINI_MODEL, MEI_MAX_OUTPUT_TOKENS } from "@/lib/ai/config";
+
+// Fast replies: no extra thinking.
+export const FAST_THINKING = { thinkingLevel: ThinkingLevel.MINIMAL } as const;
 
 let client: GoogleGenAI | null = null;
 
@@ -17,15 +21,16 @@ export async function generateText(prompt: string, systemInstruction?: string) {
   const response = await getClient().models.generateContent({
     model: GEMINI_MODEL,
     contents: prompt,
-    config: { systemInstruction, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS },
+    config: { systemInstruction, maxOutputTokens: GEMINI_MAX_OUTPUT_TOKENS, thinkingConfig: FAST_THINKING },
   });
   return response.text ?? "";
 }
 
-// Chat-style call that returns raw JSON text (Mei). Model and prompt stay on the server.
+// Chat-style call that returns JSON text (Mei). Structured output keeps the JSON complete and valid.
 export async function generateJson(
   messages: { role: "user" | "model"; text: string }[],
-  systemInstruction: string
+  systemInstruction: string,
+  schema: unknown
 ) {
   const response = await getClient().models.generateContent({
     model: GEMINI_MODEL,
@@ -34,6 +39,8 @@ export async function generateJson(
       systemInstruction,
       maxOutputTokens: MEI_MAX_OUTPUT_TOKENS,
       responseMimeType: "application/json",
+      responseJsonSchema: schema,
+      thinkingConfig: FAST_THINKING,
     },
   });
   return response.text ?? "";
@@ -58,4 +65,18 @@ export function friendlyAiError(error: unknown): { message: string; status: numb
     return { message: "Could not reach Gemini (network problem).", status: 502 };
   }
   return { message: "Gemini request failed.", status: 502 };
+}
+
+// Logs status, message and model to the terminal, and returns the JSON error response.
+// While testing (not production) the real error text is returned to the page too. The key is never included.
+export function aiErrorResponse(where: string, model: string, error: unknown) {
+  const e = error as { status?: number; code?: number; message?: string };
+  const realMessage = (error instanceof Error ? error.message : String(error)).replace(/key=[^&\s"]+/gi, "key=***");
+  console.error(`[gemini] ${where} failed | model=${model} | status=${e?.status ?? e?.code ?? "n/a"} | ${realMessage}`);
+  const { message, status } = friendlyAiError(error);
+  const body: Record<string, unknown> = { error: message };
+  if (process.env.NODE_ENV !== "production") {
+    body.detail = `model=${model} status=${e?.status ?? e?.code ?? "n/a"} ${realMessage}`.slice(0, 600);
+  }
+  return NextResponse.json(body, { status });
 }

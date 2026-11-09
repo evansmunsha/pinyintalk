@@ -1,107 +1,52 @@
 "use client";
 
 import { signUpAction } from "@/app/actions/auth";
+import { Bi, ErrorBox } from "@/components/Bi";
+import { T } from "@/lib/ui-text";
 import Link from "next/link";
-import { useActionState } from "react";
-import { useEffect } from "react";
+import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+
+const input =
+  "mt-1 block min-h-12 w-full rounded-xl border border-stone-300 bg-white px-3 text-lg focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50";
 
 export default function SignUpPage() {
   const [state, formAction, pending] = useActionState(signUpAction, null);
   const router = useRouter();
 
   useEffect(() => {
-    if (state?.success) {
-      router.push("/dashboard");
-    }
+    if (state?.success) router.push("/onboarding");
   }, [state, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Welingo</h1>
-          <p className="text-2xl text-gray-600 mb-8">你好</p>
-          <h2 className="text-3xl font-bold">Start talking. Read along.</h2>
-          <p className="mt-2 text-gray-600">
-            A Mandarin-speaking friend who switches to English the moment you're lost
-          </p>
-        </div>
-
-        <form action={formAction} className="mt-8 space-y-6">
-          {state?.error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {state.error}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Full name
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                required
-                disabled={pending}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:opacity-50"
-                placeholder="Your name"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                disabled={pending}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:opacity-50"
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                minLength={8}
-                disabled={pending}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:opacity-50"
-                placeholder="••••••••"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Must be at least 8 characters
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={pending}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {pending ? "Creating account..." : "Start talking"}
-          </button>
-
-          <p className="text-center text-sm text-gray-600">
-            Already have an account?{" "}
-            <Link href="/signin" className="font-medium text-teal-600 hover:text-teal-500">
-              Sign in
-            </Link>
-          </p>
-        </form>
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-4 py-8">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-teal-700">Yadalingo</h1>
+        <h2 className="mt-4 text-2xl"><Bi label={T.createAccount} /></h2>
       </div>
-    </div>
+
+      <form action={formAction} className="space-y-4">
+        <ErrorBox message={state?.error ?? ""} />
+        <label className="block text-stone-700">
+          <Bi label={T.name} align="start" />
+          <input name="name" type="text" required disabled={pending} autoComplete="name" className={input} />
+        </label>
+        <label className="block text-stone-700">
+          <Bi label={T.email} align="start" />
+          <input name="email" type="email" required disabled={pending} autoComplete="email" className={input} />
+        </label>
+        <label className="block text-stone-700">
+          <Bi label={T.password} align="start" />
+          <input name="password" type="password" required minLength={8} disabled={pending} autoComplete="new-password" className={input} />
+        </label>
+        <button disabled={pending} className="min-h-12 w-full rounded-xl bg-teal-600 text-lg text-white disabled:opacity-60">
+          <Bi label={pending ? T.creating : T.signUp} />
+        </button>
+        <p className="flex flex-col items-center gap-1 text-stone-600">
+          <Bi label={T.haveAccount} />
+          <Link href="/signin" className="flex min-h-11 items-center font-medium text-teal-700"><Bi label={T.signIn} /></Link>
+        </p>
+      </form>
+    </main>
   );
 }

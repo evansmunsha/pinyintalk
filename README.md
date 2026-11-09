@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Yadalingo
 
-## Getting Started
+A Mandarin memory keeper and practice partner. Learners list the phrases they already know, review them by ear with spaced repetition, and chat with **Mei** (powered by Google Gemini). All Chinese is shown in **pinyin only**, never characters.
 
-First, run the development server:
+## Run it (pnpm only)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
+```
+pnpm install
+pnpm prisma db push
+pnpm prisma generate
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+After any change to `prisma/schema.prisma`, run `pnpm prisma db push` and then `pnpm prisma generate`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Open http://localhost:3000. Smoke-test Gemini at `/test-ai`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables (`.env`, never commit)
 
-## Learn More
+| Name | Purpose |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string (e.g. Neon) |
+| `NEXTAUTH_SECRET` | Random secret (`pnpm dlx auth secret`) |
+| `NEXTAUTH_URL` | App URL, `http://localhost:3000` locally |
+| `GEMINI_API_KEY` | Google Gemini key (server only) |
 
-To learn more about Next.js, take a look at the following resources:
+## Where things live
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `lib/config.ts`: per-user limits (daily Mei messages etc.). Plans plug in here later.
+- `lib/ai/config.ts`: the Gemini model name.
+- `lib/mei/prompt.ts`: Mei's system prompt.
+- `lib/srs.ts`: spaced repetition (1, 2, 4... up to 30 days; wrong resets to 1).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Add a hint card
+1. Add an entry to `lib/data/hints.ts`.
+2. Add a keyword matcher for it in `lib/hints.ts` (`detectHints`).
 
-## Deploy on Vercel
+### Add a starter phrase
+Add `{ pinyin, meaning, speechText }` to `lib/data/starterPhrases.ts`. `speechText` is hidden Chinese used only for audio and is never displayed.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Deploy to Vercel
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Push to GitHub and import the repo in Vercel.
+2. Add the four environment variables above (set `NEXTAUTH_URL` to your production domain).
+3. Run once against the production database: `pnpm prisma db push`.
+4. Set your production domain in Vercel.
+
+## Phone checklist
+Sign up, add phrases, open a hint card, play a phrase, finish a review, chat with Mei, sign out and back in.

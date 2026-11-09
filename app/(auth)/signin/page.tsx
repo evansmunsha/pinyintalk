@@ -1,79 +1,42 @@
 "use client";
 
 import { signInAction } from "@/app/actions/auth";
+import { Bi, ErrorBox } from "@/components/Bi";
+import { T } from "@/lib/ui-text";
 import Link from "next/link";
 import { useActionState } from "react";
+
+const input =
+  "mt-1 block min-h-12 w-full rounded-xl border border-stone-300 bg-white px-3 text-lg focus:outline-none focus:ring-2 focus:ring-teal-500 disabled:opacity-50";
 
 export default function SignInPage() {
   const [state, formAction, pending] = useActionState(signInAction, null);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Welingo</h1>
-          <p className="text-2xl text-gray-600 mb-8">你好</p>
-          <h2 className="text-3xl font-bold">Welcome back</h2>
-          <p className="mt-2 text-gray-600">
-            Sign in to continue your Mandarin journey
-          </p>
-        </div>
-
-        <form action={formAction} className="mt-8 space-y-6">
-          {state?.error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {state.error}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                disabled={pending}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:opacity-50"
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                disabled={pending}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 disabled:opacity-50"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={pending}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {pending ? "Signing in..." : "Sign in"}
-          </button>
-
-          <p className="text-center text-sm text-gray-600">
-            Don't have an account?{" "}
-            <Link href="/signup" className="font-medium text-teal-600 hover:text-teal-500">
-              Sign up
-            </Link>
-          </p>
-        </form>
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-4 py-8">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold text-teal-700">Yadalingo</h1>
+        <h2 className="mt-4 text-2xl"><Bi label={T.welcomeBack} /></h2>
       </div>
-    </div>
+
+      <form action={formAction} className="space-y-4">
+        <ErrorBox message={state?.error ?? ""} />
+        <label className="block text-stone-700">
+          <Bi label={T.email} align="start" />
+          <input name="email" type="email" required disabled={pending} autoComplete="email" className={input} />
+        </label>
+        <label className="block text-stone-700">
+          <Bi label={T.passwordShort} align="start" />
+          <input name="password" type="password" required disabled={pending} autoComplete="current-password" className={input} />
+        </label>
+        <button disabled={pending} className="min-h-12 w-full rounded-xl bg-teal-600 text-lg text-white disabled:opacity-60">
+          <Bi label={pending ? T.signingIn : T.signIn} />
+        </button>
+        <p className="flex flex-col items-center gap-1 text-stone-600">
+          <Bi label={T.newHere} />
+          <Link href="/signup" className="flex min-h-11 items-center font-medium text-teal-700"><Bi label={T.signUp} /></Link>
+        </p>
+      </form>
+    </main>
   );
 }
