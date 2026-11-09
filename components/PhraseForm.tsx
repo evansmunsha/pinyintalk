@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { addPhraseAction } from "@/app/actions/phrases";
+import { Bi, ErrorBox } from "@/components/Bi";
 import { STARTER_PHRASES } from "@/lib/data/starterPhrases";
+import { T } from "@/lib/ui-text";
 
 // Add-one-phrase form plus tap-to-add starter phrases.
 export function PhraseForm({ existing, showStarters }: { existing: string[]; showStarters?: boolean }) {
@@ -38,26 +40,31 @@ export function PhraseForm({ existing, showStarters }: { existing: string[]; sho
   return (
     <div className="space-y-6">
       <form onSubmit={submit} className="space-y-3">
-        <input className={input} value={pinyin} onChange={(e) => setPinyin(e.target.value)}
-          placeholder="Phrase in pinyin, e.g. nǐ hǎo" aria-label="Phrase in pinyin" autoCapitalize="none" />
-        <input className={input} value={meaning} onChange={(e) => setMeaning(e.target.value)}
-          placeholder="What it means" aria-label="Meaning" />
-        {error && <p className="text-sm text-red-700">{error}</p>}
-        <button disabled={pending} className="min-h-12 w-full rounded-xl bg-teal-600 text-lg font-semibold text-white disabled:opacity-60">
-          Add
+        <label className="block">
+          <Bi label={T.phraseInPinyin} align="start" className="mb-1" />
+          <input className={input} value={pinyin} onChange={(e) => setPinyin(e.target.value)}
+            placeholder="Pinyin phrase" autoCapitalize="none" />
+        </label>
+        <label className="block">
+          <Bi label={T.meaning} align="start" className="mb-1" />
+          <input className={input} value={meaning} onChange={(e) => setMeaning(e.target.value)} placeholder="hello" />
+        </label>
+        <ErrorBox message={error} />
+        <button disabled={pending} className="min-h-12 w-full rounded-xl bg-teal-600 text-lg text-white disabled:opacity-60">
+          <Bi label={T.add} />
         </button>
       </form>
 
       {showStarters && (
         <section>
-          <h2 className="mb-2 font-semibold text-stone-700">Quick add</h2>
+          <h2 className="mb-2 text-stone-700"><Bi label={T.quickAdd} align="start" /></h2>
           <div className="flex flex-wrap gap-2">
             {STARTER_PHRASES.map((p) => {
               const done = have.has(p.pinyin.toLowerCase());
               return (
                 <button key={p.pinyin} type="button" disabled={done || pending} onClick={() => addStarter(p)}
-                  className={`min-h-11 rounded-full border px-4 text-base ${done ? "border-teal-200 bg-teal-50 text-teal-700" : "border-stone-300 bg-white"}`}>
-                  {done ? "✓ " : "+ "}{p.pinyin}
+                  className={`min-h-11 rounded-full border px-4 text-left ${done ? "border-teal-200 bg-teal-50 text-teal-700" : "border-stone-300 bg-white"}`}>
+                  <Bi label={{ py: `${done ? "✓" : "+"} ${p.pinyin}`, en: p.meaning }} align="start" />
                 </button>
               );
             })}

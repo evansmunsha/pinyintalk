@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Bi, ErrorBox } from "@/components/Bi";
+import { Pinyin } from "@/components/Pinyin";
 import { useMeiVoice } from "@/lib/useMeiVoice";
+import { T } from "@/lib/ui-text";
 
 export default function TestAiPage() {
   const voice = useMeiVoice();
@@ -27,34 +30,38 @@ export default function TestAiPage() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center gap-6 px-4 py-8">
-      <h1 className="text-2xl font-bold">Test Mei</h1>
+      <h1 className="text-2xl"><Bi label={T.testTitle} align="start" /></h1>
       <button
         onClick={run}
         disabled={loading}
-        className="min-h-12 rounded-xl bg-teal-600 px-4 text-lg font-semibold text-white disabled:opacity-60"
+        className="min-h-12 rounded-xl bg-teal-600 px-4 text-lg text-white disabled:opacity-60"
       >
-        {loading ? "Mei is thinking…" : "Say nǐ hǎo to Mei"}
+        <Bi label={loading ? T.thinking : T.testSayHello} />
       </button>
       {reply && (
         <p className="whitespace-pre-line rounded-2xl bg-teal-50 p-4 text-lg text-teal-900">
           {reply}
         </p>
       )}
-      {error && <p className="rounded-2xl bg-red-50 p-4 text-red-800">{error}</p>}
+      <ErrorBox message={error} />
 
       <section className="space-y-3 border-t border-stone-200 pt-6">
-        <h2 className="text-xl font-semibold">Hear Mei</h2>
+        <h2 className="text-xl"><Bi label={T.hearMei} align="start" /></h2>
         <div className="rounded-2xl bg-white p-4 shadow-sm">
-          <p className="text-2xl font-semibold">nǐ hǎo ma</p>
-          <p className="text-stone-600">how are you?</p>
+          <p className="text-2xl font-semibold"><Pinyin text="nǐ hǎo ma" /></p>
+          <p className="text-sm text-stone-600">how are you?</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => voice.play([{ text: "nǐ hǎo ma", lang: "zh", speechText: "你好吗" }])}
-            className="min-h-12 flex-1 rounded-xl bg-teal-600 font-semibold text-white">▶ Normal</button>
+            className="min-h-12 flex-1 rounded-xl bg-teal-600 text-white">▶ <Bi label={T.normal} className="inline-flex" /></button>
           <button onClick={() => voice.play([{ text: "nǐ hǎo ma", lang: "zh", speechText: "你好吗" }], true)}
-            className="min-h-12 flex-1 rounded-xl border-2 border-teal-600 font-semibold text-teal-700">🐢 Slow</button>
+            className="min-h-12 flex-1 rounded-xl border-2 border-teal-600 text-teal-700">🐢 <Bi label={T.slow} className="inline-flex" /></button>
         </div>
-        {voice.fallbackUsed && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Gemini voice unavailable, using your phone&apos;s voice. {voice.error}</p>}
+        {voice.fallbackUsed && (
+          <div className="rounded-xl bg-amber-50 p-3 text-amber-900">
+            <Bi label={{ py: T.voiceFallback.py, en: `${T.voiceFallback.en} ${voice.error}` }} align="start" />
+          </div>
+        )}
       </section>
     </main>
   );

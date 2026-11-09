@@ -2,18 +2,28 @@
 
 import { useRef, useState } from "react";
 import { addPhraseAction } from "@/app/actions/phrases";
-import { useSpeech } from "@/lib/useSpeech";
+import { Bi, ErrorBox } from "@/components/Bi";
+import { Pinyin } from "@/components/Pinyin";
+import { useMeiVoice, type Part } from "@/lib/useMeiVoice";
 import type { MeiReply } from "@/lib/types";
+import { T, messagesLeft } from "@/lib/ui-text";
 
 type Msg = { role: "user" | "model"; text: string; reply?: MeiReply; added?: boolean; help?: boolean };
 
-export function MeiChat({ remainingStart }: { remainingStart: number }) {
+// Mandarin first, then the English explanation ("I said, ...") unless the learner turned it off.
+function partsFor(reply: MeiReply, englishAfter: boolean): Part[] {
+  const parts: Part[] = [{ text: reply.pinyin, lang: "zh", speechText: reply.speech }];
+  if (englishAfter) parts.push({ text: reply.english, lang: "en" });
+  return parts;
+}
+
+export function MeiChat({ remainingStart, englishAfter = true }: { remainingStart: number; englishAfter?: boolean }) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [remaining, setRemaining] = useState(remainingStart);
-  const { speak } = useSpeech();
+  const voice = useMeiVoice();
   const endRef = useRef<HTMLDivElement>(null);
 
   async function send(text: string) {
@@ -38,6 +48,8 @@ export function MeiChat({ remainingStart }: { remainingStart: number }) {
       } else {
         setMsgs([...next, { role: "model", text: data.reply.pinyin, reply: data.reply }]);
         setRemaining(data.remaining);
+        // Mei's replies play automatically.
+        voice.play(partsFor(data.reply, englishAfter));
       }
     } catch {
       setError("Network problem. Please try again.");
@@ -57,53 +69,69 @@ export function MeiChat({ remainingStart }: { remainingStart: number }) {
 
   return (
     <div className="flex min-h-[calc(100dvh-9rem)] flex-col md:min-h-[calc(100dvh-4rem)]">
-      <p className="mb-3 text-sm text-stone-500">{remaining} messages left today</p>
+      <p className="mb-3 text-sm text-stone-500"><Bi label={messagesLeft(remaining)} align="start" /></p>
       <div className="flex-1 space-y-3">
         {!msgs.length && (
-          <div className="rounded-2xl bg-white p-4 text-stone-600">
-            Say hi to Mei. Write in pinyin or in English, for example &quot;how do I say thank you?&quot;
+          <div className="rounded-2xl bg-white p-4 text-lg text-stone-700">
+            <Bi label={T.chatIntro} align="start" />
             <div className="mt-3 flex flex-wrap gap-2">
-              {["nǐ hǎo", "how do I say goodbye?"].map((s) => (
-                <button key={s} onClick={() => send(s)} className="min-h-11 rounded-full border border-stone-300 px-4">{s}</button>
-              ))}
+              <button onClick={() => send("nǐ hǎo")} className="min-h-11 rounded-full border border-stone-300 px-4">
+                <Bi label={{ py: "nǐ hǎo", en: "hello" }} />
+              </button>
+              <button onClick={() => send("how do I say goodbye?")} className="min-h-11 rounded-full border border-stone-300 px-4">
+                <Bi label={T.howSayGoodbye} />
+              </button>
             </div>
           </div>
         )}
         {msgs.map((m, i) =>
           m.role === "user" ? (
-            <div key={i} className="ml-auto max-w-[85%] rounded-2xl bg-teal-600 px-4 py-3 text-lg text-white">{m.text}</div>
+            <div key={i} className="ml-auto max-w-[85%] break-words rounded-2xl bg-teal-100 px-4 py-3 text-lg text-stone-900"><Pinyin text={m.text} /></div>
           ) : (
             <div key={i} className="max-w-[90%] space-y-2 rounded-2xl bg-white p-4 shadow-sm">
-              <p className="break-words text-xl font-semibold">{m.reply?.pinyin}</p>
-              <p className="text-stone-600">{m.reply?.english}</p>
-              {m.help && <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">{m.reply?.note}</p>}
+              <p className="break-words text-2xl font-semibold"><Pinyin text={m.reply?.pinyin ?? ""} /></p>
+              <p className="text-sm text-stone-600">{m.reply?.english}</p>
+              {m.help && m.reply?.note && <p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-900">{m.reply.note}</p>}
               {m.reply?.newPhrase && (
-                <p className="rounded-lg bg-teal-50 p-2 text-sm">
-                  New: <b>{m.reply.newPhrase.pinyin}</b> = {m.reply.newPhrase.meaning}
-                </p>
+                <div className="rounded-lg bg-teal-50 p-2">
+                  <p className="text-sm text-teal-800"><Bi label={T.newPhrase} align="start" /></p>
+                  <p className="text-lg font-semibold"><Pinyin text={m.reply.newPhrase.pinyin} /></p>
+                  <p className="text-sm text-stone-600">{m.reply.newPhrase.meaning}</p>
+                </div>
               )}
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => speak(m.reply?.speech || m.reply?.pinyin || "")} className="min-h-11 rounded-full border border-stone-300 px-4">▶ Play</button>
+                <button onClick={() => m.reply && voice.play(partsFor(m.reply, englishAfter))} className="min-h-11 rounded-full border border-stone-300 px-4">
+                  ▶ <Bi label={T.play} className="inline-flex" />
+                </button>
                 {m.reply?.newPhrase && (
                   <button disabled={m.added} onClick={() => addNew(i)} className="min-h-11 rounded-full border border-teal-300 px-4 text-teal-800 disabled:opacity-60">
-                    {m.added ? "✓ Added" : "Add to my phrases"}
+                    <Bi label={m.added ? T.added : T.addToPhrases} />
                   </button>
                 )}
                 <button onClick={() => setMsgs((x) => x.map((y, j) => (j === i ? { ...y, help: !y.help } : y)))} className="min-h-11 rounded-full border border-stone-300 px-4">
-                  Help in English
+                  <Bi label={T.helpEnglish} />
                 </button>
               </div>
             </div>
           )
         )}
-        {loading && <div className="h-16 w-40 animate-pulse rounded-2xl bg-stone-200" />}
-        {error && <p className="rounded-xl bg-red-50 p-3 text-red-800">{error}</p>}
+        {loading && (
+          <div className="flex w-fit items-center gap-2 rounded-2xl bg-white px-4 py-3 shadow-sm" role="status">
+            <Bi label={T.thinking} align="start" />
+            <span className="flex gap-1" aria-hidden>
+              {[0, 150, 300].map((d) => (
+                <span key={d} className="h-2.5 w-2.5 animate-bounce rounded-full bg-teal-600" style={{ animationDelay: `${d}ms` }} />
+              ))}
+            </span>
+          </div>
+        )}
+        <ErrorBox message={error} />
         <div ref={endRef} />
       </div>
       <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="sticky bottom-16 mt-3 flex gap-2 bg-stone-50 py-2 md:bottom-0">
-        <input value={input} onChange={(e) => setInput(e.target.value)} maxLength={500} placeholder="Message Mei"
+        <input value={input} onChange={(e) => setInput(e.target.value)} maxLength={500} placeholder="Pinyin or English…"
           aria-label="Message Mei" className="min-h-12 min-w-0 flex-1 rounded-xl border border-stone-300 bg-white px-3 text-lg" />
-        <button disabled={loading || remaining <= 0} className="min-h-12 rounded-xl bg-teal-600 px-5 font-semibold text-white disabled:opacity-60">Send</button>
+        <button disabled={loading || remaining <= 0} className="min-h-12 rounded-xl bg-teal-600 px-5 text-white disabled:opacity-60"><Bi label={T.send} /></button>
       </form>
     </div>
   );
