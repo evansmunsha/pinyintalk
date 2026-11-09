@@ -1,5 +1,6 @@
 import { Bi } from "@/components/Bi";
 import { Pinyin } from "@/components/Pinyin";
+import { ReportMistake } from "@/components/ReportMistake";
 import { detectHints } from "@/lib/hints";
 import { T } from "@/lib/ui-text";
 
@@ -25,6 +26,9 @@ export function HintCards({ pinyin }: { pinyin: string }) {
               </li>
             ))}
           </ul>
+          <div className="mt-2">
+            <ReportMistake exactText={`${h.titlePinyin}\n${h.title}\n${h.body}\n${h.examples.map((example) => `${example.pinyin}: ${example.english}`).join("\n")}`} />
+          </div>
         </details>
       ))}
     </div>

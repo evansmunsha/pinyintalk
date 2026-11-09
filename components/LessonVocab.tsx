@@ -6,6 +6,7 @@ import { Bi, ErrorBox } from "@/components/Bi";
 import { HintCards } from "@/components/HintCards";
 import { Pinyin } from "@/components/Pinyin";
 import { PlayButton } from "@/components/PlayButton";
+import { ReportMistake } from "@/components/ReportMistake";
 import type { Vocab } from "@/lib/data/lessons";
 import { T, phrasesAdded, type Label } from "@/lib/ui-text";
 
@@ -33,6 +34,7 @@ export function LessonVocab({ lessonId, vocabulary }: { lessonId: string; vocabu
             <div className="min-w-0 flex-1">
               <p className="break-words text-xl font-semibold"><Pinyin text={v.pinyin} /></p>
               <p className="text-sm text-stone-600">{v.meaning}</p>
+              <ReportMistake exactText={`${v.pinyin}\n${v.meaning}`} />
             </div>
           </div>
           <HintCards pinyin={v.pinyin} />

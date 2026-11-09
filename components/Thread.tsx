@@ -3,6 +3,7 @@
 import { AudioClip } from "@/components/AudioClip";
 import { Bi } from "@/components/Bi";
 import { Pinyin } from "@/components/Pinyin";
+import { ReportMistake } from "@/components/ReportMistake";
 import { ToneFeedback } from "@/components/ToneFeedback";
 import type { ToneFeedback as ToneFeedbackData } from "@/lib/tone-analysis";
 import { T } from "@/lib/ui-text";
@@ -38,9 +39,13 @@ export function Thread({ turns, onDeleteTurn }: { turns: TurnDTO[]; onDeleteTurn
       {turns.map((t) => (
         <div key={t.id} className="space-y-3">
           <div className="ml-auto w-[90%] max-w-sm space-y-2 rounded-2xl border border-teal-200 bg-teal-50 p-3">
-            <AudioClip src={t.hasLearner ? clipUrl(t.id, "learner") : null} label={T.you} />
-            <p className="break-words text-xl font-semibold"><Pinyin text={t.heardPinyin} /></p>
-            <p className="break-words text-sm text-stone-600">{t.heardEnglish}</p>
+            {t.hasLearner ? (
+              <AudioClip src={clipUrl(t.id, "learner")} label={T.you} />
+            ) : (
+              <p className="text-sm text-teal-700"><Bi label={T.you} align="start" /></p>
+            )}
+            {t.heardPinyin && <p className="break-words text-xl font-semibold"><Pinyin text={t.heardPinyin} /></p>}
+            {t.heardEnglish && <p className="break-words text-sm text-stone-600">{t.heardEnglish}</p>}
             {t.toneFeedback && <ToneFeedback feedback={t.toneFeedback} />}
             <div className="text-right"><Time iso={t.createdAt} /></div>
           </div>
@@ -49,10 +54,13 @@ export function Thread({ turns, onDeleteTurn }: { turns: TurnDTO[]; onDeleteTurn
             <p className="text-sm text-teal-700"><Bi label={T.mei} align="start" /></p>
             <p className="break-words text-2xl font-semibold"><Pinyin text={t.replyPinyin} /></p>
             <p className="break-words text-sm text-stone-600">{t.replyEnglish}</p>
-            <div className="grid grid-cols-2 gap-2">
-              <AudioClip src={t.hasZh ? clipUrl(t.id, "zh") : null} label={T.chineseClip} />
-              <AudioClip src={t.hasEn ? clipUrl(t.id, "en") : null} label={T.englishClip} />
-            </div>
+            <ReportMistake exactText={`${t.replyPinyin}\n${t.replyEnglish}`} />
+            {(t.hasZh || t.hasEn) && (
+              <div className="grid grid-cols-2 gap-2">
+                {t.hasZh && <AudioClip src={clipUrl(t.id, "zh")} label={T.chineseClip} />}
+                {t.hasEn && <AudioClip src={clipUrl(t.id, "en")} label={T.englishClip} />}
+              </div>
+            )}
             {onDeleteTurn && (
               <button onClick={() => onDeleteTurn(t.id)} className="min-h-11 text-sm text-red-700 underline">
                 <Bi label={T.deleteMessage} align="start" />

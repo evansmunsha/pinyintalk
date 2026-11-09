@@ -52,10 +52,16 @@ export function AskQuestion() {
 
   return (
     <form onSubmit={submit} className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
+      <div className="space-y-1 rounded-xl bg-teal-50 p-3 text-sm text-teal-950">
+        <p className="font-semibold"><Bi label={{ py: "zěnme xiàng dàjiā tíwèn", en: "How to ask the community" }} align="start" /></p>
+        <p><Bi label={{ py: "qǐng yòng pīnyīn huò yīngwén xiěxià nǐ xiǎng qǐngjiào de wèntí.", en: "Write in pinyin or English what you want help with." }} align="start" /></p>
+        <p><Bi label={{ py: "xiě shàng nà jù huà hé nǐ de wèntí. Lìzi: “Nǐ hǎo ma? Zhèlǐ de ma shì shénme yìsi?”", en: "Include the phrase and your question. Example: “Ni hao ma? What does ma mean here?”" }} align="start" /></p>
+        <p><Bi label={{ py: "yě kěyǐ lù yī duàn duǎn yǔyīn. Qǐng bùyào tiánxiě hànzì huò gèrén xìnxī.", en: "You can also record a short voice note. Please do not include Chinese characters or personal information." }} align="start" /></p>
+      </div>
       <label className="block">
-        <Bi label={T.askQuestion} align="start" className="mb-1" />
+        <Bi label={{ py: "wèn tí", en: "Your question (pinyin or English)" }} align="start" className="mb-1" />
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} maxLength={500}
-          placeholder="Type a question in pinyin" className="w-full rounded-xl border border-stone-300 p-3 text-lg" />
+          placeholder="Write the phrase and what you want to know…" className="w-full rounded-xl border border-stone-300 p-3 text-lg" />
       </label>
       <VoiceNoteInput key={voiceInputKey} onChange={setVoiceNote} />
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Level">

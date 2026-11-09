@@ -35,6 +35,7 @@ model User {
   receivedMessages   DirectMessage[]     @relation("Recipient")
   conversations       Conversation[]
   conversationTurns   ConversationTurn[]
+  mistakeReports      MistakeReport[]
 
   @@index([email])
 }
@@ -279,4 +280,24 @@ model DirectMessage {
 
   @@index([senderId, recipientId, createdAt])
   @@index([recipientId, readAt])
+}
+
+enum MistakeReportStatus {
+  open
+  fixed
+  rejected
+}
+
+model MistakeReport {
+  id        String              @id @default(cuid())
+  userId    String
+  exactText String
+  page      String
+  note      String
+  status    MistakeReportStatus @default(open)
+  createdAt DateTime            @default(now())
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
 }

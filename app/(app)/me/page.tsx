@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { signOutAction } from "@/app/actions/auth";
 import { Bi } from "@/components/Bi";
 import { EnglishAfterToggle } from "@/components/EnglishAfterToggle";
+import { isMistakeReportAdmin } from "@/lib/admin";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 import { T } from "@/lib/ui-text";
@@ -11,6 +13,7 @@ export default async function MePage() {
     where: { id: userId },
     select: { name: true, email: true, englishAfterChinese: true },
   });
+  const isAdmin = await isMistakeReportAdmin(userId);
 
   return (
     <div className="space-y-5">
@@ -25,6 +28,11 @@ export default async function MePage() {
         <EnglishAfterToggle initial={user?.englishAfterChinese ?? true} />
         <p className="px-1 text-stone-500"><Bi label={T.englishAfterHelp} align="start" /></p>
       </section>
+      {isAdmin && (
+        <Link href="/admin/reports" className="flex min-h-12 items-center justify-center rounded-xl bg-white shadow-sm">
+          <Bi label={{ py: "cuòwù bàogào", en: "Mistake reports" }} />
+        </Link>
+      )}
       <form action={signOutAction}>
         <button className="min-h-12 w-full rounded-xl border border-stone-300 bg-white text-lg"><Bi label={T.signOut} /></button>
       </form>

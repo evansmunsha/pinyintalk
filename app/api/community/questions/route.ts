@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { communityAudioPath, communityAudioUrl, validateCommunityWav } from "@/lib/community-audio";
-import { communityQuestionSchema } from "@/lib/community-schemas";
+import { communityQuestionSchema, communityVoiceQuestionSchema } from "@/lib/community-schemas";
 import prisma from "@/lib/prisma";
 import { deleteAudio, saveAudio } from "@/lib/storage";
 
@@ -18,11 +18,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid question form." }, { status: 400 });
   }
 
-  const parsed = communityQuestionSchema.safeParse({ text: form.get("text"), level: form.get("level") });
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid question." }, { status: 400 });
   const audioValidation = await validateCommunityWav(form.get("audio"));
   if (!audioValidation.ok) return NextResponse.json({ error: audioValidation.error }, { status: 400 });
   const audio = audioValidation.file;
+  const schema = audio ? communityVoiceQuestionSchema : communityQuestionSchema;
+  const parsed = schema.safeParse({ text: form.get("text"), level: form.get("level") });
+  if (!parsed.success) return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Invalid question." }, { status: 400 });
 
   let questionId: string | null = null;
   let audioPath: string | null = null;

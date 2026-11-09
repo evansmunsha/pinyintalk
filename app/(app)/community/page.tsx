@@ -41,7 +41,11 @@ export default async function CommunityPage() {
               <span>{q.user.name}</span>
               <span className="rounded-full bg-stone-100 px-3 py-1"><Bi label={LEVEL_LABEL[q.level] ?? T.beginner} /></span>
             </div>
-            <p className="break-words text-xl font-semibold"><Pinyin text={q.text} /></p>
+            {q.text ? (
+              <p className="break-words text-xl font-semibold"><Pinyin text={q.text} /></p>
+            ) : (
+              <p className="text-sm text-stone-500"><Bi label={{ py: "shēngyīn tíwèn", en: "Voice question" }} /></p>
+            )}
             {q.voiceNoteUrl && <AudioClip src={q.voiceNoteUrl} label={{ py: "xuéshēng lùyīn", en: "Learner voice note" }} />}
             {q.responses.length === 0 ? (
               <p className="text-stone-500"><Bi label={T.waitingTeacher} align="start" /></p>

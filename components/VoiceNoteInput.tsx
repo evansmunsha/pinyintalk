@@ -51,6 +51,14 @@ export function VoiceNoteInput({ onChange }: { onChange: (audio: Blob | null) =>
 
   return (
     <div className="space-y-2 rounded-xl border border-stone-200 p-3">
+      <Bi
+        label={{
+          py: "kěyǐ lù yī duàn zuì duō shíwǔ miǎo de yǔyīn, ránhòu tíngzhǐ bìng yùlǎn zài fābù.",
+          en: "Optional: record up to 15 seconds, stop, and preview your voice note before posting.",
+        }}
+        align="start"
+        className="text-sm text-stone-600"
+      />
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"

@@ -1,5 +1,6 @@
 import { errorLabel, type Label } from "@/lib/ui-text";
 import { Pinyin } from "@/components/Pinyin";
+import { ReportMistake } from "@/components/ReportMistake";
 
 // Pinyin on top (larger), English meaning underneath (smaller). Size follows the parent text size.
 export function Bi({
@@ -15,7 +16,10 @@ export function Bi({
     <span
       className={`flex flex-col leading-snug ${align === "center" ? "items-center text-center" : "items-start text-left"} ${className}`}
     >
-      <span className="break-words text-[1.05em] font-semibold"><Pinyin text={label.py} /></span>
+      <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+        <span className="break-words text-[1.05em] font-semibold"><Pinyin text={label.py} /></span>
+        <ReportMistake exactText={`${label.py}\n${label.en}`} />
+      </span>
       <span className="break-words text-[0.72em] font-normal opacity-75">{label.en}</span>
     </span>
   );

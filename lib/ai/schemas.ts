@@ -7,7 +7,7 @@ export const MEI_REPLY_SCHEMA = {
     pinyin: { type: "string", description: "Mei's short Mandarin reply in pinyin with tone marks. No Chinese characters." },
     speech: { type: "string", description: "The same sentence in Chinese characters, used only for audio." },
     english: { type: "string", description: "Starts with 'I said,' then the meaning of the Mandarin sentence." },
-    note: { type: "string", description: "Optional. One short English line (max 12 words)." },
+    note: { type: "string", description: "A brief beginner-friendly English explanation of the Mandarin phrase, distinct from its translation. Maximum 12 words." },
     newPhrase: {
       type: "object",
       description: "Optional. At most one new short phrase.",
@@ -19,7 +19,7 @@ export const MEI_REPLY_SCHEMA = {
       required: ["pinyin", "meaning"],
     },
   },
-  required: ["pinyin", "english"],
+  required: ["pinyin", "english", "note"],
 } as const;
 
 export const TALK_SCHEMA = {
