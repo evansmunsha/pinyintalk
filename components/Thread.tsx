@@ -3,6 +3,8 @@
 import { AudioClip } from "@/components/AudioClip";
 import { Bi } from "@/components/Bi";
 import { Pinyin } from "@/components/Pinyin";
+import { ToneFeedback } from "@/components/ToneFeedback";
+import type { ToneFeedback as ToneFeedbackData } from "@/lib/tone-analysis";
 import { T } from "@/lib/ui-text";
 
 export type TurnDTO = {
@@ -10,6 +12,7 @@ export type TurnDTO = {
   createdAt: string;
   heardPinyin: string;
   heardEnglish: string;
+  toneFeedback?: ToneFeedbackData;
   replyPinyin: string;
   replyEnglish: string;
   hasLearner: boolean;
@@ -38,6 +41,7 @@ export function Thread({ turns, onDeleteTurn }: { turns: TurnDTO[]; onDeleteTurn
             <AudioClip src={t.hasLearner ? clipUrl(t.id, "learner") : null} label={T.you} />
             <p className="break-words text-xl font-semibold"><Pinyin text={t.heardPinyin} /></p>
             <p className="break-words text-sm text-stone-600">{t.heardEnglish}</p>
+            {t.toneFeedback && <ToneFeedback feedback={t.toneFeedback} />}
             <div className="text-right"><Time iso={t.createdAt} /></div>
           </div>
 

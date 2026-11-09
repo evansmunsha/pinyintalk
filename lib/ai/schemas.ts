@@ -39,6 +39,26 @@ export const TALK_SCHEMA = {
       },
       required: ["pinyin", "english"],
     },
+    toneFeedback: {
+      type: "object",
+      description: "A brief estimate of the learner's Mandarin tone accuracy from the audio.",
+      properties: {
+        summary: { type: "string", description: "One short English sentence summarizing tone accuracy." },
+        syllables: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              pinyin: { type: "string", description: "One recognized Mandarin syllable with its tone mark." },
+              status: { type: "string", enum: ["clear", "practice", "unclear"] },
+              tip: { type: "string", description: "One short English correction cue, or empty when clear." },
+            },
+            required: ["pinyin", "status", "tip"],
+          },
+        },
+      },
+      required: ["summary", "syllables"],
+    },
   },
-  required: ["heard", "reply"],
+  required: ["heard", "reply", "toneFeedback"],
 } as const;

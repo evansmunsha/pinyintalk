@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { AudioClip } from "@/components/AudioClip";
 import { Bi, ErrorBox } from "@/components/Bi";
 import { Thread, type TurnDTO } from "@/components/Thread";
+import type { ToneFeedback } from "@/lib/tone-analysis";
 import { useMeiVoice, type Part } from "@/lib/useMeiVoice";
 import { useRecorder } from "@/lib/useRecorder";
 import { T, messagesLeft, recording, type Label } from "@/lib/ui-text";
@@ -12,6 +13,7 @@ import { T, messagesLeft, recording, type Label } from "@/lib/ui-text";
 type TalkResponse = {
   heard: { pinyin: string; english: string };
   reply: { pinyin: string; speech?: string; english: string };
+  toneFeedback: ToneFeedback;
   turnId?: string;
   conversationId?: string;
   createdAt?: string;
@@ -120,6 +122,7 @@ export function TalkConversation({
           createdAt: data.createdAt ?? new Date().toISOString(),
           heardPinyin: data.heard.pinyin,
           heardEnglish: data.heard.english,
+          toneFeedback: data.toneFeedback,
           replyPinyin: data.reply.pinyin,
           replyEnglish: data.reply.english,
           hasLearner: !!data.turnId,

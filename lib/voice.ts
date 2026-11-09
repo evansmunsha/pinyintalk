@@ -6,6 +6,7 @@ import { TALK_SCHEMA } from "@/lib/ai/schemas";
 import { FAST_THINKING, getClient } from "@/lib/gemini";
 import { stripHanzi } from "@/lib/pinyin";
 import { readAudio, saveAudio } from "@/lib/storage";
+import { toneFeedbackSchema } from "@/lib/tone-analysis";
 
 export type SpeakLang = "zh" | "en";
 
@@ -106,11 +107,16 @@ export type Heard = { pinyin: string; english: string };
 export type Talked = {
   heard: Heard;
   reply: { pinyin: string; speech?: string; english: string };
+  toneFeedback: {
+    summary: string;
+    syllables: { pinyin: string; status: "clear" | "practice" | "unclear"; tip: string }[];
+  };
 };
 
 const TALK_SYSTEM = `You are Mei, a friendly Mandarin partner talking with a learner. The audio is the learner speaking Mandarin.
 1. "heard": what they said, in pinyin with tone marks (never Chinese characters) plus a short English meaning. If there is no clear speech, use empty strings.
-2. "reply": your very short, natural Mandarin answer (max 6 words) in pinyin with tone marks, "speech" = the same sentence in Chinese characters (audio only, never shown), and "english" = "I said," then the meaning in as few words as possible, as if explaining your own sentence. Never reply with only one part.
+2. "toneFeedback": assess the tones you can hear in the learner's recording. Return one entry for each recognized syllable in order, using the syllable from "heard.pinyin" with its tone mark. Mark "clear" when the tone is clear, "practice" only when a tone error is audible, and "unclear" when you cannot judge confidently. Do not penalize natural third-tone sandhi. Give a short, specific English cue for "practice"; use an empty tip otherwise. If speech is unclear, return no syllables and explain briefly in "summary". This is an estimate, not a precise acoustic measurement.
+3. "reply": your very short, natural Mandarin answer (max 6 words) in pinyin with tone marks, "speech" = the same sentence in Chinese characters (audio only, never shown), and "english" = "I said," then the meaning in as few words as possible, as if explaining your own sentence. Never reply with only one part.
 Answer ONLY with JSON in the given schema.`;
 
 // One Gemini call does both listening and replying (faster than two calls).
@@ -149,6 +155,7 @@ export async function talk(
   const heard = parsed.heard;
   const reply = parsed.reply;
   if (!heard?.pinyin?.trim() || !reply?.pinyin?.trim()) return null;
+  const toneFeedback = toneFeedbackSchema.parse(parsed.toneFeedback);
   const english = (reply.english ?? "").trim();
   return {
     heard: { pinyin: stripHanzi(heard.pinyin), english: stripHanzi(heard.english ?? "") },
@@ -156,6 +163,14 @@ export async function talk(
       pinyin: stripHanzi(reply.pinyin),
       speech: reply.speech,
       english: /^i said/i.test(english) ? stripHanzi(english) : `I said, ${stripHanzi(english)}`,
+    },
+    toneFeedback: {
+      summary: stripHanzi(toneFeedback.summary),
+      syllables: toneFeedback.syllables.map((item) => ({
+        ...item,
+        pinyin: stripHanzi(item.pinyin),
+        tip: stripHanzi(item.tip),
+      })),
     },
   };
 }
