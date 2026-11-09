@@ -1,13 +1,20 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { GoogleGenAI } from "@google/genai";
-import { GEMINI_LISTEN_MODEL, GEMINI_TTS_MODEL, VOICES } from "@/lib/ai/config";
-import { getClient } from "@/lib/gemini";
+import { GEMINI_LISTEN_MODEL, GEMINI_TTS_MODEL, TALK_MAX_OUTPUT_TOKENS, VOICES } from "@/lib/ai/config";
+import { TALK_SCHEMA } from "@/lib/ai/schemas";
+import { FAST_THINKING, getClient } from "@/lib/gemini";
+import { stripHanzi } from "@/lib/pinyin";
+import { readAudio, saveAudio } from "@/lib/storage";
 
 export type SpeakLang = "zh" | "en";
 
-const cache = new Map<string, Buffer>();
-const CACHE_MAX = 200;
+// Survives dev hot-reloads. Also remembers requests still in progress so two identical
+// requests (for example a warm-up and a real one) share one Gemini call.
+const g = globalThis as unknown as { __ttsCache?: Map<string, Buffer>; __ttsPending?: Map<string, Promise<Buffer>> };
+const cache = (g.__ttsCache ??= new Map<string, Buffer>());
+const pending = (g.__ttsPending ??= new Map<string, Promise<Buffer>>());
+const CACHE_MAX = 500;
 
 // Gemini TTS returns raw 24kHz 16-bit mono PCM in some paths; make sure we always send a WAV.
 function ensureWav(buf: Buffer): Buffer {
@@ -29,10 +36,44 @@ function ensureWav(buf: Buffer): Buffer {
 }
 
 // Each language part is sent separately with its own voice and style, so the model never guesses.
+// Uses the fastest TTS model (see GEMINI_TTS_MODEL in lib/ai/config.ts).
 export async function synthesize(text: string, lang: SpeakLang, slow: boolean): Promise<Buffer> {
-  const key = createHash("sha1").update(`${lang}|${slow}|${text}`).digest("hex");
+  const key = createHash("sha1").update(`${GEMINI_TTS_MODEL}|${lang}|${slow}|${text}`).digest("hex");
   const hit = cache.get(key);
-  if (hit) return hit;
+  if (hit) {
+    console.log(`[timing] tts ${lang}: cache hit`);
+    return hit;
+  }
+  const inFlight = pending.get(key);
+  if (inFlight) return inFlight;
+
+  const job = loadOrGenerateSpeech(text, lang, slow, key).finally(() => pending.delete(key));
+  pending.set(key, job);
+  return job;
+}
+
+function remember(key: string, wav: Buffer) {
+  if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value as string);
+  cache.set(key, wav);
+}
+
+async function loadOrGenerateSpeech(text: string, lang: SpeakLang, slow: boolean, key: string): Promise<Buffer> {
+  const path = `tts/${key}.wav`;
+  const stored = await readAudio(path);
+  if (stored) {
+    remember(key, stored);
+    console.log(`[timing] tts ${lang}: disk cache hit`);
+    return stored;
+  }
+
+  const wav = await generateSpeech(text, lang, slow);
+  await saveAudio(path, wav);
+  remember(key, wav);
+  return wav;
+}
+
+async function generateSpeech(text: string, lang: SpeakLang, slow: boolean): Promise<Buffer> {
+  const started = Date.now();
 
   const style =
     lang === "zh"
@@ -56,12 +97,68 @@ export async function synthesize(text: string, lang: SpeakLang, slow: boolean): 
   if (!data) throw new Error("No audio returned");
   const wav = ensureWav(Buffer.from(data, "base64"));
 
-  if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value as string);
-  cache.set(key, wav);
+  console.log(`[timing] tts ${lang}: ${Date.now() - started}ms (${GEMINI_TTS_MODEL})`);
   return wav;
 }
 
 export type Heard = { pinyin: string; english: string };
+
+export type Talked = {
+  heard: Heard;
+  reply: { pinyin: string; speech?: string; english: string };
+};
+
+const TALK_SYSTEM = `You are Mei, a friendly Mandarin partner talking with a learner. The audio is the learner speaking Mandarin.
+1. "heard": what they said, in pinyin with tone marks (never Chinese characters) plus a short English meaning. If there is no clear speech, use empty strings.
+2. "reply": your very short, natural Mandarin answer (max 6 words) in pinyin with tone marks, "speech" = the same sentence in Chinese characters (audio only, never shown), and "english" = "I said," then the meaning in as few words as possible, as if explaining your own sentence. Never reply with only one part.
+Answer ONLY with JSON in the given schema.`;
+
+// One Gemini call does both listening and replying (faster than two calls).
+// Structured output keeps the JSON complete; if parsing still fails we retry once.
+export async function talk(
+  audioBase64: string,
+  history: { role: "user" | "model"; text: string }[]
+): Promise<Talked | null> {
+  let parsed: Partial<Talked> | null = null;
+  let raw = "";
+  for (let attempt = 1; attempt <= 2 && !parsed; attempt++) {
+    const started = Date.now();
+    const response = await getClient().models.generateContent({
+      model: GEMINI_LISTEN_MODEL,
+      contents: [
+        ...history.map((m) => ({ role: m.role, parts: [{ text: m.text }] })),
+        { role: "user", parts: [{ inlineData: { data: audioBase64, mimeType: "audio/wav" } }] },
+      ],
+      config: {
+        systemInstruction: TALK_SYSTEM,
+        responseMimeType: "application/json",
+        responseJsonSchema: TALK_SCHEMA,
+        maxOutputTokens: TALK_MAX_OUTPUT_TOKENS,
+        thinkingConfig: FAST_THINKING,
+      },
+    });
+    console.log(`[timing] gemini talk: ${Date.now() - started}ms (${GEMINI_LISTEN_MODEL}, attempt ${attempt})`);
+    raw = (response.text ?? "").replace(/^```(?:json)?\s*|\s*```$/g, "");
+    try {
+      parsed = JSON.parse(raw) as Partial<Talked>;
+    } catch {
+      console.error(`[gemini] talk unreadable (attempt ${attempt}) | raw=${raw.slice(0, 300)}`);
+    }
+  }
+  if (!parsed) throw new Error(`Gemini answer was not valid JSON after 2 tries. Raw start: ${raw.slice(0, 120) || "(empty)"}`);
+  const heard = parsed.heard;
+  const reply = parsed.reply;
+  if (!heard?.pinyin?.trim() || !reply?.pinyin?.trim()) return null;
+  const english = (reply.english ?? "").trim();
+  return {
+    heard: { pinyin: stripHanzi(heard.pinyin), english: stripHanzi(heard.english ?? "") },
+    reply: {
+      pinyin: stripHanzi(reply.pinyin),
+      speech: reply.speech,
+      english: /^i said/i.test(english) ? stripHanzi(english) : `I said, ${stripHanzi(english)}`,
+    },
+  };
+}
 
 // Gemini understands the Mandarin audio and answers in pinyin with tone marks plus English.
 export async function transcribe(audioBase64: string, mimeType: string): Promise<Heard | null> {
@@ -79,9 +176,14 @@ export async function transcribe(audioBase64: string, mimeType: string): Promise
         ],
       },
     ],
-    config: { responseMimeType: "application/json", maxOutputTokens: 300 },
+    config: { responseMimeType: "application/json", maxOutputTokens: 200, thinkingConfig: FAST_THINKING },
   });
-  const parsed = JSON.parse(response.text ?? "{}") as Partial<Heard>;
+  let parsed: Partial<Heard> = {};
+  try {
+    parsed = JSON.parse(response.text ?? "{}") as Partial<Heard>;
+  } catch {
+    throw new Error("Gemini returned an unreadable answer for the recording.");
+  }
   if (!parsed.pinyin?.trim()) return null;
   return { pinyin: parsed.pinyin.trim(), english: (parsed.english ?? "").trim() };
 }
