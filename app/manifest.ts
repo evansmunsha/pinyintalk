@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Yadalingo",
-    short_name: "Yadalingo",
+    name: "Pinyin Talk",
+    short_name: "Pinyin Talk",
     start_url: "/dashboard",
     display: "standalone",
     background_color: "#fafaf9",

@@ -21,7 +21,7 @@ export default function SignUpPage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-6 px-4 py-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-teal-700">Yadalingo</h1>
+        <h1 className="text-3xl font-bold text-teal-700">Pinyin Talk</h1>
         <h2 className="mt-4 text-2xl"><Bi label={T.createAccount} /></h2>
       </div>
 

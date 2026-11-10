@@ -1,6 +1,6 @@
-# Yadalingo
+# Pinyin Talk
 
-A Mandarin memory keeper and practice partner. Learners list the phrases they already know, review them by ear with spaced repetition, and chat with **Mei** (powered by Google Gemini). All Chinese is shown in **pinyin only**, never characters.
+A Mandarin memory keeper and practice partner. Learners list the phrases they already know, review them by ear with spaced repetition, and chat with **Mei**, their partner inside Pinyin Talk (powered by Google Gemini). All Chinese is shown in **pinyin only**, never characters.
 
 ## Run it (pnpm only)
 
@@ -22,6 +22,7 @@ Open http://localhost:3000. Smoke-test Gemini at `/test-ai`.
 | `DATABASE_URL` | PostgreSQL connection string (e.g. Neon) |
 | `NEXTAUTH_SECRET` | Random secret (`pnpm dlx auth secret`) |
 | `NEXTAUTH_URL` | App URL, `http://localhost:3000` locally |
+| `NEXT_PUBLIC_SITE_URL` | Public site URL, set by you for each environment |
 | `GEMINI_API_KEY` | Google Gemini key (server only) |
 
 ## Where things live
@@ -43,7 +44,7 @@ Add `{ pinyin, meaning, speechText }` to `lib/data/starterPhrases.ts`. `speechTe
 1. Push to GitHub and import the repo in Vercel.
 2. Add the four environment variables above (set `NEXTAUTH_URL` to your production domain).
 3. Run once against the production database: `pnpm prisma db push`.
-4. Set your production domain in Vercel.
+4. Set `NEXT_PUBLIC_SITE_URL` and `NEXTAUTH_URL` in Vercel to your site URL.
 
 ## Phone checklist
 Sign up, add phrases, open a hint card, play a phrase, finish a review, chat with Mei, sign out and back in.

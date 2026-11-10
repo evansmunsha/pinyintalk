@@ -66,7 +66,7 @@ export const T = {
   quickAdd: L("Kuàisù tiānjiā", "Quick add"),
   noMatch: L("Méiyǒu zhǎodào", "No phrases match your search"),
   onboardingTitle: L("Nǐ yǐjīng huì shuō nǎxiē Zhōngwén duǎnyǔ?", "Which Chinese phrases do you already know?"),
-  onboardingHelp: L("Yòng pīnyīn tiānjiā. Yadalingo bāng nǐ jìzhù tāmen.", "Add them in pinyin. Yadalingo helps you remember them."),
+  onboardingHelp: L("Yòng pīnyīn tiānjiā. Pinyin Talk bāng nǐ jìzhù tāmen.", "Add them in pinyin. Pinyin Talk helps you remember them."),
 
   // Review
   listenPick: L("Tīng yī tīng, xuǎn yìsi", "Listen, then pick the meaning"),

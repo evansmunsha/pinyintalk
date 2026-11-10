@@ -1,8 +1,8 @@
-# Technical Design Document: Yadalingo Mandarin Learning App
+# Technical Design Document: Pinyin Talk Mandarin Learning App
 
 ## Overview
 
-Yadalingo is a full-stack Mandarin Chinese learning application built with Next.js 14+ App Router, enabling personalized language instruction through AI-powered conversational practice, real-time tone analysis, listening comprehension drills, and community support. The system leverages server components for optimal performance, streaming responses for enhanced UX, and a scalable architecture supporting 100+ concurrent users.
+Pinyin Talk is a full-stack Mandarin Chinese learning application built with Next.js 14+ App Router, enabling personalized language instruction through AI-powered conversational practice, real-time tone analysis, listening comprehension drills, and community support. The system leverages server components for optimal performance, streaming responses for enhanced UX, and a scalable architecture supporting 100+ concurrent users.
 
 ### Technology Stack
 
@@ -1993,9 +1993,9 @@ export default function () {
 # Production environment variables
 DATABASE_URL="postgresql://..."
 NEXTAUTH_SECRET="..."
-NEXTAUTH_URL="https://yadalingo.com"
+NEXTAUTH_URL="${NEXT_PUBLIC_SITE_URL}"
 OPENAI_API_KEY="sk-..."
-STORAGE_URL="https://storage.yadalingo.com"
+STORAGE_URL="${NEXT_PUBLIC_SITE_URL}"
 STORAGE_ACCESS_KEY="..."
 STORAGE_SECRET_KEY="..."
 REDIS_URL="redis://..."
@@ -2053,7 +2053,7 @@ npx prisma migrate deploy
 ### File Structure
 
 ```
-yadalingo/
+pinyin-talk/
 ├── app/
 │   ├── (auth)/
 │   │   ├── signin/

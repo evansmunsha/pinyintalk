@@ -22,7 +22,7 @@ export default function Navigation() {
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-20 flex border-t border-stone-200 bg-white pb-[env(safe-area-inset-bottom)] md:inset-y-0 md:right-auto md:w-56 md:flex-col md:gap-1 md:border-r md:border-t-0 md:p-3"
     >
-      <span className="hidden px-3 py-4 text-xl font-bold text-teal-700 md:block">Yadalingo</span>
+      <span className="hidden px-3 py-4 text-xl font-bold text-teal-700 md:block">Pinyin Talk</span>
       {TABS.map((t) => {
         const active = t.match.some((m) => pathname.startsWith(m));
         return (

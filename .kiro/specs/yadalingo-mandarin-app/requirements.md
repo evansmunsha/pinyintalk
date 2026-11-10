@@ -2,12 +2,12 @@
 
 ## Introduction
 
-Yadalingo is a full-stack Mandarin Chinese learning application that provides personalized language instruction through AI-powered conversation practice, listening drills, tone analysis, and community support. The application enables learners to practice speaking and listening with real-time feedback on pronunciation and tones, progress through themed lessons, and engage with a community of learners and teachers.
+Pinyin Talk is a full-stack Mandarin Chinese learning application that provides personalized language instruction through AI-powered conversation practice, listening drills, tone analysis, and community support. The application enables learners to practice speaking and listening with real-time feedback on pronunciation and tones, progress through themed lessons, and engage with a community of learners and teachers.
 
 ## Glossary
 
-- **System**: The complete Yadalingo application including frontend, backend, and AI services
-- **User**: A learner using the Yadalingo application
+- **System**: The complete Pinyin Talk application including frontend, backend, and AI services
+- **User**: A learner using the Pinyin Talk application
 - **Mei**: The AI-powered Mandarin tutor personality integrated into the application
 - **Session**: A single practice session encompassing one or more conversation exchanges or listening drills
 - **Authentication_System**: The component responsible for user identity verification and access control
@@ -301,4 +301,3 @@ Yadalingo is a full-stack Mandarin Chinese learning application that provides pe
 4. THE System SHALL display User's name in the home dashboard greeting
 5. THE System SHALL track total practice time per User
 6. THE System SHALL calculate and display User progress metrics
-

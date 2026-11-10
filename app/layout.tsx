@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Yadalingo",
+  title: "Pinyin Talk",
   description: "Keep the Mandarin you know alive, and practise with Mei.",
   manifest: "/manifest.webmanifest",
 };

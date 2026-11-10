@@ -7,7 +7,7 @@ export default function WelcomePage() {
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center gap-8 px-4 py-8 text-center">
       <div>
-        <h1 className="text-4xl font-bold text-teal-700">Yadalingo</h1>
+        <h1 className="text-4xl font-bold text-teal-700">Pinyin Talk</h1>
         <p className="mt-3 text-3xl font-semibold"><Pinyin text="nǐ hǎo" /></p>
         <p className="text-stone-500">hello</p>
       </div>

@@ -1,8 +1,8 @@
-# Implementation Plan: Yadalingo Mandarin Learning App
+# Implementation Plan: Pinyin Talk Mandarin Learning App
 
 ## Overview
 
-This implementation plan breaks down the Yadalingo full-stack Mandarin learning application into discrete, actionable tasks. The application uses Next.js 14+ App Router, React Server Components, TypeScript, PostgreSQL with Prisma ORM, and OpenAI APIs for AI-powered conversation and speech processing. Tasks are organized to enable incremental development with early validation of core functionality.
+This implementation plan breaks down the Pinyin Talk full-stack Mandarin learning application into discrete, actionable tasks. The application uses Next.js 14+ App Router, React Server Components, TypeScript, PostgreSQL with Prisma ORM, and OpenAI APIs for AI-powered conversation and speech processing. Tasks are organized to enable incremental development with early validation of core functionality.
 
 ## Tasks
 

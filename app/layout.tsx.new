@@ -5,7 +5,7 @@ import "./globals.css";
 const font = Nunito({ variable: "--font-sans", subsets: ["latin", "latin-ext"] });
 
 export const metadata: Metadata = {
-  title: "Yadalingo",
+  title: "Pinyin Talk",
   description: "Keep the Mandarin you know alive, and practise with Mei.",
   manifest: "/manifest.webmanifest",
 };
