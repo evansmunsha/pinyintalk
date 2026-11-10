@@ -9,9 +9,6 @@ function speakText(part: Part) {
   return part.lang === "zh" ? part.speechText || part.text : part.text;
 }
 
-// Clips already downloaded in this browser tab, so repeats play instantly.
-const clipCache = new Map<string, Promise<string>>();
-
 // Common Mei lines, requested in the background so the first answer can play straight away.
 export const COMMON_PARTS: Part[] = [
   { text: "nǐ hǎo", lang: "zh", speechText: "你好" },
@@ -22,19 +19,14 @@ export const COMMON_PARTS: Part[] = [
   { text: "I said, my name is Mei.", lang: "en" },
 ];
 
-function loadClip(part: Part, slow: boolean): Promise<string> {
+function loadClip(part: Part): Promise<string> {
   const text = part.lang === "zh" ? part.speechText || part.text : part.text;
-  // Clips that must be saved to a turn skip the browser cache so the server always sees the request.
-  const key = `${part.lang}|${slow}|${text}|${part.turnId ?? ""}`;
-  const cached = clipCache.get(key);
-  if (cached) return cached;
-
   const started = performance.now();
-  const promise = (async () => {
+  return (async () => {
     const res = await fetch("/api/voice/speak", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, lang: part.lang, slow, turnId: part.turnId }),
+      body: JSON.stringify({ text, lang: part.lang, turnId: part.turnId }),
     });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
@@ -44,14 +36,10 @@ function loadClip(part: Part, slow: boolean): Promise<string> {
     console.log(`[timing] speak ${part.lang}: ${Math.round(performance.now() - started)}ms`);
     return url;
   })();
-  // Failed requests are not cached, so they can be retried.
-  promise.catch(() => clipCache.delete(key));
-  clipCache.set(key, promise);
-  return promise;
 }
 
 export function warmUpCommonClips() {
-  COMMON_PARTS.forEach((p) => loadClip(p, false).catch(() => undefined));
+  COMMON_PARTS.forEach((p) => loadClip(p).then(URL.revokeObjectURL, () => undefined));
 }
 
 // Plays Mei's voice from /api/voice/speak. Falls back to the browser voice (zh-CN) if Gemini fails.
@@ -62,14 +50,18 @@ export function useMeiVoice() {
   const audio = useRef<HTMLAudioElement | null>(null);
   const run = useRef(0);
 
-  const fetchClip = useCallback((part: Part, slow: boolean) => loadClip(part, slow), []);
+  const fetchClip = useCallback((part: Part) => loadClip(part), []);
 
-  const playUrl = (url: string, id: number) =>
+  const playUrl = (url: string, id: number, slow: boolean) =>
     new Promise<void>((resolve, reject) => {
       if (id !== run.current) return resolve();
       const el = new Audio(url);
+      el.playbackRate = slow ? 0.6 : 1;
       audio.current = el;
       el.onended = () => resolve();
+      el.onpause = () => {
+        if (id !== run.current) resolve();
+      };
       el.onerror = () => reject(new Error("Could not play audio"));
       el.play().catch(reject);
     });
@@ -96,17 +88,27 @@ export function useMeiVoice() {
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
       setError("");
       setSpeaking(true);
-      const clips = parts.map((p) => fetchClip(p, slow));
-      clips.forEach((c) => c.catch(() => undefined));
+      const clips = parts.map((part) => fetchClip(part));
+      clips.forEach((clip) => clip.catch(() => undefined));
       for (let i = 0; i < parts.length; i++) {
-        if (id !== run.current) return;
+        if (id !== run.current) {
+          clips.forEach((clip) => clip.then(URL.revokeObjectURL, () => undefined));
+          return;
+        }
+        let url: string | null = null;
         try {
-          await playUrl(await clips[i], id);
+          url = await clips[i];
+          await playUrl(url, id, slow);
         } catch (e) {
-          if (id !== run.current) return;
+          if (id !== run.current) {
+            clips.slice(i + 1).forEach((clip) => clip.then((url) => URL.revokeObjectURL(url), () => undefined));
+            return;
+          }
           setError(e instanceof Error ? e.message : "Voice failed");
           setFallbackUsed(true);
           await browserVoice(parts[i], slow);
+        } finally {
+          if (url) URL.revokeObjectURL(url);
         }
         if (i < parts.length - 1) await new Promise((r) => setTimeout(r, 300));
       }

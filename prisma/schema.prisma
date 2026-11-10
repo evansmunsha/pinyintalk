@@ -364,6 +364,31 @@ model ConversationTurn {
   @@index([userId])
 }
 
+enum SpeechClipStatus {
+  generating
+  ready
+  failed
+}
+
+model SpeechClip {
+  id        String           @id @default(cuid())
+  cacheKey  String           @unique
+  text      String
+  lang      String
+  audioPath String?
+  status    SpeechClipStatus @default(generating)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([status, updatedAt])
+}
+
+model GeminiVoiceUsage {
+  day       String   @id
+  count     Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
 // ---------- Social ----------
 
 model Follow {

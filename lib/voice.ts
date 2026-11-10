@@ -10,6 +10,14 @@ import { toneFeedbackSchema } from "@/lib/tone-analysis";
 
 export type SpeakLang = "zh" | "en";
 
+export function speechCacheKey(text: string, lang: SpeakLang, slow: boolean): string {
+  return createHash("sha1").update(`${GEMINI_TTS_MODEL}|${lang}|${slow}|${text}`).digest("hex");
+}
+
+export function speechCachePath(text: string, lang: SpeakLang, slow: boolean): string {
+  return `tts/${speechCacheKey(text, lang, slow)}.wav`;
+}
+
 // Survives dev hot-reloads. Also remembers requests still in progress so two identical
 // requests (for example a warm-up and a real one) share one Gemini call.
 const g = globalThis as unknown as { __ttsCache?: Map<string, Buffer>; __ttsPending?: Map<string, Promise<Buffer>> };
@@ -36,10 +44,22 @@ function ensureWav(buf: Buffer): Buffer {
   return Buffer.concat([header, buf]);
 }
 
+function isCompleteWav(buf: Buffer): boolean {
+  return buf.length >= 12 &&
+    buf.subarray(0, 4).toString("ascii") === "RIFF" &&
+    buf.subarray(8, 12).toString("ascii") === "WAVE" &&
+    buf.readUInt32LE(4) + 8 === buf.length;
+}
+
 // Each language part is sent separately with its own voice and style, so the model never guesses.
 // Uses the fastest TTS model (see GEMINI_TTS_MODEL in lib/ai/config.ts).
-export async function synthesize(text: string, lang: SpeakLang, slow: boolean): Promise<Buffer> {
-  const key = createHash("sha1").update(`${GEMINI_TTS_MODEL}|${lang}|${slow}|${text}`).digest("hex");
+export async function synthesize(
+  text: string,
+  lang: SpeakLang,
+  slow: boolean,
+  onGeminiCall?: () => Promise<void>,
+): Promise<Buffer> {
+  const key = speechCacheKey(text, lang, slow);
   const hit = cache.get(key);
   if (hit) {
     console.log(`[timing] tts ${lang}: cache hit`);
@@ -48,7 +68,7 @@ export async function synthesize(text: string, lang: SpeakLang, slow: boolean): 
   const inFlight = pending.get(key);
   if (inFlight) return inFlight;
 
-  const job = loadOrGenerateSpeech(text, lang, slow, key).finally(() => pending.delete(key));
+  const job = loadOrGenerateSpeech(text, lang, slow, key, onGeminiCall).finally(() => pending.delete(key));
   pending.set(key, job);
   return job;
 }
@@ -58,15 +78,22 @@ function remember(key: string, wav: Buffer) {
   cache.set(key, wav);
 }
 
-async function loadOrGenerateSpeech(text: string, lang: SpeakLang, slow: boolean, key: string): Promise<Buffer> {
-  const path = `tts/${key}.wav`;
+async function loadOrGenerateSpeech(
+  text: string,
+  lang: SpeakLang,
+  slow: boolean,
+  key: string,
+  onGeminiCall?: () => Promise<void>,
+): Promise<Buffer> {
+  const path = speechCachePath(text, lang, slow);
   const stored = await readAudio(path);
-  if (stored) {
+  if (stored && isCompleteWav(stored)) {
     remember(key, stored);
     console.log(`[timing] tts ${lang}: disk cache hit`);
     return stored;
   }
 
+  await onGeminiCall?.();
   const wav = await generateSpeech(text, lang, slow);
   await saveAudio(path, wav);
   remember(key, wav);

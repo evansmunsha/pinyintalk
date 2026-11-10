@@ -44,7 +44,7 @@ export function TalkConversation({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [unsaved, setUnsaved] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
-  const lastReply = useRef<{ pinyin: string; speech?: string; english: string } | null>(null);
+  const lastReply = useRef<{ pinyin: string; speech?: string; english: string; turnId?: string } | null>(null);
   const previewUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -114,7 +114,7 @@ export function TalkConversation({
       }
       if (typeof data.remaining === "number") setRemaining(data.remaining);
       setUnsaved(!data.turnId);
-      lastReply.current = data.reply;
+      lastReply.current = { ...data.reply, turnId: data.turnId };
       setTurns((t) => [
         ...t,
         {
@@ -146,7 +146,14 @@ export function TalkConversation({
   }
 
   function slowReplay() {
-    if (lastReply.current) voice.play([{ text: lastReply.current.pinyin, lang: "zh", speechText: lastReply.current.speech }], true);
+    if (lastReply.current) {
+      voice.play([{
+        text: lastReply.current.pinyin,
+        lang: "zh",
+        speechText: lastReply.current.speech,
+        turnId: lastReply.current.turnId,
+      }], true);
+    }
   }
 
   return (

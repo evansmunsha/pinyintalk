@@ -23,6 +23,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ turn
   const relPath = kind.data === "learner" ? turn?.learnerAudioPath : kind.data === "zh" ? turn?.replyZhAudioPath : turn?.replyEnAudioPath;
   const data = relPath ? await readAudio(relPath) : null;
   if (!data) return NextResponse.json({ error: "Not found." }, { status: 404 });
+  if (kind.data === "zh" || kind.data === "en") console.log("[voice] saved clip used");
 
   // Range support lets Safari (iPhone) play and seek the file.
   const headers = { "Content-Type": "audio/wav", "Accept-Ranges": "bytes", "Cache-Control": "private, max-age=3600" };

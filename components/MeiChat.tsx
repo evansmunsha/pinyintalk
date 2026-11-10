@@ -13,8 +13,8 @@ import type { MeiReply } from "@/lib/types";
 import { T, messagesLeft } from "@/lib/ui-text";
 import { insertToneAtCursor } from "@/lib/pinyin";
 
-type Msg = { role: "user" | "model"; text: string; reply?: MeiReply; added?: boolean; help?: boolean };
-type MeiResponse = { reply: MeiReply; remaining: number; conversationId: string };
+type Msg = { role: "user" | "model"; text: string; reply?: MeiReply; turnId?: string; added?: boolean; help?: boolean };
+type MeiResponse = { reply: MeiReply; remaining: number; conversationId: string; turnId: string };
 
 function messagesFromTurns(turns: TurnDTO[]): Msg[] {
   return turns.flatMap((turn) => [
@@ -27,14 +27,15 @@ function messagesFromTurns(turns: TurnDTO[]): Msg[] {
         english: turn.replyEnglish,
         note: "Read the pinyin aloud; the English line explains Mei's Mandarin reply.",
       },
+      turnId: turn.id,
     },
   ]);
 }
 
 // Mandarin first, then the English explanation ("I said, ...") unless the learner turned it off.
-function partsFor(reply: MeiReply, englishAfter: boolean): Part[] {
-  const parts: Part[] = [{ text: reply.pinyin, lang: "zh", speechText: reply.speech }];
-  if (englishAfter) parts.push({ text: reply.english, lang: "en" });
+function partsFor(reply: MeiReply, englishAfter: boolean, turnId?: string): Part[] {
+  const parts: Part[] = [{ text: reply.pinyin, lang: "zh", speechText: reply.speech, turnId }];
+  if (englishAfter) parts.push({ text: reply.english, lang: "en", turnId });
   return parts;
 }
 
@@ -102,10 +103,10 @@ export function MeiChat({
       } else {
         setConversationId(data.conversationId);
         window.history.replaceState(null, "", `/mei?mode=type&c=${encodeURIComponent(data.conversationId)}`);
-        setMsgs([...next, { role: "model", text: data.reply.pinyin, reply: data.reply }]);
+        setMsgs([...next, { role: "model", text: data.reply.pinyin, reply: data.reply, turnId: data.turnId }]);
         setRemaining(data.remaining);
         // Mei's replies play automatically.
-        voice.play(partsFor(data.reply, englishAfter));
+        voice.play(partsFor(data.reply, englishAfter, data.turnId));
       }
     } catch {
       setError("Network problem. Please try again.");
@@ -172,7 +173,7 @@ export function MeiChat({
                 </div>
               )}
               <div className="flex flex-wrap gap-2">
-                <button onClick={() => m.reply && voice.play(partsFor(m.reply, englishAfter))} className="min-h-11 rounded-full border border-stone-300 px-4">
+                <button onClick={() => m.reply && voice.play(partsFor(m.reply, englishAfter, m.turnId))} className="min-h-11 rounded-full border border-stone-300 px-4">
                   ▶ <Bi label={T.play} className="inline-flex" />
                 </button>
                 {m.reply?.newPhrase && (

@@ -17,10 +17,10 @@ export function Bi({
       className={`flex flex-col leading-snug ${align === "center" ? "items-center text-center" : "items-start text-left"} ${className}`}
     >
       <span className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
-        <span className="break-words text-[1.05em] font-semibold"><Pinyin text={label.py} /></span>
+        <span className="wrap-break-word text-[1.05em] font-semibold"><Pinyin text={label.py} /></span>
         <ReportMistake exactText={`${label.py}\n${label.en}`} />
       </span>
-      <span className="break-words text-[0.72em] font-normal opacity-75">{label.en}</span>
+      <span className="wrap-break-word text-[0.72em] font-normal opacity-75">{label.en}</span>
     </span>
   );
 }

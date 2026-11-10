@@ -6,7 +6,7 @@ import { useState, useTransition, type KeyboardEvent, type MouseEvent } from "re
 import { submitMistakeReport } from "@/app/actions/mistake-reports";
 import { Pinyin } from "@/components/Pinyin";
 
-const REPORT_LABEL = { py: "Bàogào cuòwù", en: "Report a mistake" };
+const REPORT_LABEL = "Bàogào cuòwù";
 
 export function ReportMistake({ exactText }: { exactText: string }) {
   const pathname = usePathname();
@@ -50,24 +50,18 @@ export function ReportMistake({ exactText }: { exactText: string }) {
 
   return (
     <>
-      <span className="inline-flex items-center gap-1.5">
-        <span
-          role="button"
-          tabIndex={0}
-          aria-label={`${REPORT_LABEL.py}: ${REPORT_LABEL.en}`}
-          title={REPORT_LABEL.en}
-          onClick={showForm}
-          onKeyDown={handleKeyDown}
-          className="inline-flex min-h-9 cursor-pointer items-center gap-1 rounded-full px-1 text-[10px] leading-tight text-stone-500 hover:bg-amber-50 hover:text-amber-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-700"
-        >
-          <svg aria-hidden="true" viewBox="0 0 16 16" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M3 14V2m1 1h8l-2 2 2 2H4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span className="flex flex-col items-start">
-            <span className="font-semibold"><Pinyin text={REPORT_LABEL.py} /></span>
-            <span>{REPORT_LABEL.en}</span>
-          </span>
-        </span>
+      <span
+        role="button"
+        tabIndex={0}
+        aria-label={REPORT_LABEL}
+        title={REPORT_LABEL}
+        onClick={showForm}
+        onKeyDown={handleKeyDown}
+        className="inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-full text-stone-500 hover:bg-amber-50 hover:text-amber-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-700"
+      >
+        <svg aria-hidden="true" viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M3 14V2m1 1h8l-2 2 2 2H4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </span>
       {reported && (
         <span role="status" className="mt-1 flex flex-col text-xs text-emerald-800">
