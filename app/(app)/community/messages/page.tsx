@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Bi } from "@/components/Bi";
+import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
 import { Pinyin } from "@/components/Pinyin";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
@@ -12,13 +13,23 @@ export default async function MessagesPage() {
     where: { OR: [{ senderId: me }, { recipientId: me }] },
     orderBy: { createdAt: "desc" },
     take: 200,
-    include: { sender: { select: { id: true, name: true } }, recipient: { select: { id: true, name: true } } },
+    include: {
+      sender: { select: { id: true, name: true, role: true, nativeSpeaker: true } },
+      recipient: { select: { id: true, name: true, role: true, nativeSpeaker: true } },
+    },
   });
 
-  const threads = new Map<string, { id: string; name: string; last: string; unread: number }>();
+  const threads = new Map<string, { id: string; name: string; role: string; nativeSpeaker: boolean; last: string; unread: number }>();
   for (const m of recent) {
     const other = m.senderId === me ? m.recipient : m.sender;
-    const t = threads.get(other.id) ?? { id: other.id, name: other.name, last: m.text, unread: 0 };
+    const t = threads.get(other.id) ?? {
+      id: other.id,
+      name: other.name,
+      role: other.role,
+      nativeSpeaker: other.nativeSpeaker,
+      last: m.text,
+      unread: 0,
+    };
     if (m.recipientId === me && !m.readAt) t.unread += 1;
     threads.set(other.id, t);
   }
@@ -37,6 +48,7 @@ export default async function MessagesPage() {
         <Link key={t.id} href={`/community/messages/${t.id}`} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm">
           <span className="min-w-0">
             <span className="block truncate text-xl font-semibold">{t.name}</span>
+            <span className="block"><CommunityRoleBadge role={t.role} nativeSpeaker={t.nativeSpeaker} /></span>
             <span className="block truncate text-stone-600"><Pinyin text={t.last} /></span>
           </span>
           {t.unread > 0 && <span className="shrink-0 rounded-full bg-teal-600 px-3 py-1 text-sm text-white"><Bi label={T.newBadge} /></span>}

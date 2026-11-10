@@ -1,5 +1,7 @@
 import Link from "next/link";
+import Link from "next/link";
 import { Bi } from "@/components/Bi";
+import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
 import { FollowButton } from "@/components/FollowButton";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
@@ -15,6 +17,8 @@ export default async function PeoplePage() {
     select: {
       id: true,
       name: true,
+      role: true,
+      nativeSpeaker: true,
       _count: { select: { followers: true, following: true } },
       followers: { where: { followerId: me }, select: { id: true } },
     },
@@ -29,6 +33,7 @@ export default async function PeoplePage() {
         <div key={p.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm">
           <div className="min-w-0">
             <p className="truncate text-xl font-semibold">{p.name}</p>
+            <CommunityRoleBadge role={p.role} nativeSpeaker={p.nativeSpeaker} />
             <p className="text-sm text-stone-500"><Bi label={followerCounts(p._count.followers, p._count.following)} align="start" /></p>
           </div>
           <div className="flex shrink-0 flex-col gap-2">

@@ -5,9 +5,18 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { sendMessageAction } from "@/app/actions/social";
 import { Bi, ErrorBox } from "@/components/Bi";
 import { Pinyin } from "@/components/Pinyin";
+import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
 import { T } from "@/lib/ui-text";
 
-export type DirectMessageDTO = { id: string; mine: boolean; text: string; createdAt: string };
+export type DirectMessageDTO = {
+  id: string;
+  mine: boolean;
+  text: string;
+  createdAt: string;
+  senderName: string;
+  senderRole: string;
+  senderNativeSpeaker: boolean;
+};
 
 export function DirectThread({ recipientId, messages, canSend }: { recipientId: string; messages: DirectMessageDTO[]; canSend: boolean }) {
   const router = useRouter();
@@ -44,6 +53,10 @@ export function DirectThread({ recipientId, messages, canSend }: { recipientId: 
         {messages.length === 0 && <p className="py-6 text-center text-stone-500"><Bi label={T.noMessages} /></p>}
         {messages.map((m) => (
           <div key={m.id} className={`max-w-[85%] break-words rounded-2xl px-4 py-2 text-lg ${m.mine ? "ml-auto bg-teal-600 text-white" : "bg-white shadow-sm"}`}>
+            <div className="mb-1 flex flex-wrap items-center gap-2 text-xs">
+              <span className={m.mine ? "text-white" : "text-stone-700"}>{m.senderName}</span>
+              <CommunityRoleBadge role={m.senderRole} nativeSpeaker={m.senderNativeSpeaker} />
+            </div>
             <Pinyin text={m.text} />
             <time dateTime={m.createdAt} suppressHydrationWarning className={`mt-1 block text-xs ${m.mine ? "text-teal-100" : "text-stone-400"}`}>
               {new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}

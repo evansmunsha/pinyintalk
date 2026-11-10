@@ -10,14 +10,11 @@ export const communityQuestionSchema = z.object({
     .max(500)
     .refine(noHanzi, "Please type pinyin, not Chinese characters"),
   level: z.enum(["beginner", "tones", "travel"]),
+  groupId: z.string().trim().min(1).max(60).optional(),
 });
 
 export const communityVoiceQuestionSchema = communityQuestionSchema.extend({
-  text: z
-    .string()
-    .trim()
-    .max(500)
-    .refine(noHanzi, "Please type pinyin, not Chinese characters"),
+  meaning: z.string().trim().min(1).max(300).refine(noHanzi, "Please write the meaning in English"),
 });
 
 export const teacherResponseSchema = z.object({

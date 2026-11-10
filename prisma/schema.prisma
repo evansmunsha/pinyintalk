@@ -15,27 +15,36 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  proficiencyLevel  String   @default("beginner")
-  preferredTopics   String[] @default([])
-  totalPracticeTime Int      @default(0)
+  proficiencyLevel  String        @default("beginner")
+  preferredTopics   String[]      @default([])
+  totalPracticeTime Int           @default(0)
+  role              CommunityRole @default(beginner)
+  nativeSpeaker     Boolean       @default(false)
 
   // Settings. Language is a variable so more languages can be added later.
   englishAfterChinese Boolean @default(true)
   explanationLanguage String  @default("en")
   isTeacher           Boolean @default(false)
 
-  phrases            Phrase[]
-  meiUsage           MeiUsage[]
-  sessions           Session[]
-  answers            Answer[]
-  communityQuestions CommunityQuestion[]
-  following          Follow[]            @relation("Follower")
-  followers          Follow[]            @relation("Following")
-  sentMessages       DirectMessage[]     @relation("Sender")
-  receivedMessages   DirectMessage[]     @relation("Recipient")
-  conversations       Conversation[]
-  conversationTurns   ConversationTurn[]
-  mistakeReports      MistakeReport[]
+  phrases                     Phrase[]
+  meiUsage                    MeiUsage[]
+  sessions                    Session[]
+  answers                     Answer[]
+  communityQuestions          CommunityQuestion[]
+  following                   Follow[]                 @relation("Follower")
+  followers                   Follow[]                 @relation("Following")
+  sentMessages                DirectMessage[]          @relation("Sender")
+  receivedMessages            DirectMessage[]          @relation("Recipient")
+  conversations               Conversation[]
+  conversationTurns           ConversationTurn[]
+  mistakeReports              MistakeReport[]
+  teacherApplications         TeacherApplication[]     @relation("TeacherApplicant")
+  reviewedTeacherApplications TeacherApplication[]     @relation("TeacherApplicationReviewer")
+  teacherResponses            TeacherResponse[]        @relation("TeacherAuthoredResponses")
+  ownedGroups                 CommunityGroup[]         @relation("CommunityGroupOwner")
+  groupMemberships            CommunityGroupMember[]
+  voiceFeedback               CommunityVoiceFeedback[]
+  communityReports            CommunityContentReport[]
 
   @@index([email])
 }
@@ -190,32 +199,134 @@ model Answer {
 
 // ---------- Community ----------
 
+enum CommunityRole {
+  beginner
+  learner
+  advanced
+  teacher
+}
+
+enum TeacherApplicationStatus {
+  pending
+  approved
+  rejected
+}
+
+enum VoiceFeedbackRating {
+  sounds_native
+  almost_there
+  needs_practice
+}
+
+enum CommunityContentReportStatus {
+  open
+  fixed
+  rejected
+}
+
 model CommunityQuestion {
-  id           String            @id @default(cuid())
-  userId       String
-  text         String
-  voiceNoteUrl String?
-  level        String
-  status       String            @default("open")
-  createdAt    DateTime          @default(now())
-  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  responses    TeacherResponse[]
+  id             String                   @id @default(cuid())
+  userId         String
+  text           String
+  meaning        String?
+  voiceNoteUrl   String?
+  level          String
+  status         String                   @default("open")
+  groupId        String?
+  createdAt      DateTime                 @default(now())
+  user           User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  responses      TeacherResponse[]
+  group          CommunityGroup?          @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  voiceFeedback  CommunityVoiceFeedback[]
+  contentReports CommunityContentReport[]
 
   @@index([level, status])
   @@index([createdAt])
+  @@index([groupId, createdAt])
 }
 
 model TeacherResponse {
   id            String            @id @default(cuid())
   questionId    String
+  teacherId     String?
   teacherName   String
   text          String
   voiceNoteUrl  String?
   examplePinyin String?
   createdAt     DateTime          @default(now())
   question      CommunityQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  teacher       User?             @relation("TeacherAuthoredResponses", fields: [teacherId], references: [id], onDelete: SetNull)
 
   @@index([questionId])
+}
+
+model TeacherApplication {
+  id         String                   @id @default(cuid())
+  userId     String
+  note       String
+  status     TeacherApplicationStatus @default(pending)
+  createdAt  DateTime                 @default(now())
+  reviewedAt DateTime?
+  reviewerId String?
+  user       User                     @relation("TeacherApplicant", fields: [userId], references: [id], onDelete: Cascade)
+  reviewer   User?                    @relation("TeacherApplicationReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+}
+
+model CommunityGroup {
+  id          String                 @id @default(cuid())
+  name        String
+  description String
+  ownerId     String
+  createdAt   DateTime               @default(now())
+  owner       User                   @relation("CommunityGroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     CommunityGroupMember[]
+  posts       CommunityQuestion[]
+
+  @@index([createdAt])
+  @@index([ownerId])
+}
+
+model CommunityGroupMember {
+  id        String         @id @default(cuid())
+  groupId   String
+  userId    String
+  createdAt DateTime       @default(now())
+  group     CommunityGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId, createdAt])
+}
+
+model CommunityVoiceFeedback {
+  id         String              @id @default(cuid())
+  questionId String
+  userId     String
+  rating     VoiceFeedbackRating
+  comment    String?
+  createdAt  DateTime            @default(now())
+  question   CommunityQuestion   @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user       User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, userId])
+  @@index([questionId, rating])
+}
+
+model CommunityContentReport {
+  id         String                       @id @default(cuid())
+  questionId String
+  reporterId String
+  note       String?
+  status     CommunityContentReportStatus @default(open)
+  createdAt  DateTime                     @default(now())
+  question   CommunityQuestion            @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  reporter   User                         @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@unique([questionId, reporterId])
+  @@index([status, createdAt])
 }
 
 // ---------- Saved voice conversations ----------

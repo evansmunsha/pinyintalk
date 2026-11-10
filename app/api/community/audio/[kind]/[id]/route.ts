@@ -15,11 +15,26 @@ export async function GET(request: Request, { params }: { params: Promise<{ kind
   if (!parsed.success) return NextResponse.json({ error: "Not found." }, { status: 404 });
   const { kind, id } = parsed.data;
 
-  const row = kind === "question"
-    ? await prisma.communityQuestion.findUnique({ where: { id }, select: { voiceNoteUrl: true } })
-    : await prisma.teacherResponse.findUnique({ where: { id }, select: { voiceNoteUrl: true } });
-  if (row?.voiceNoteUrl !== communityAudioUrl(kind, id)) {
+  let audioUrl: string | null | undefined;
+  let groupId: string | null | undefined;
+  if (kind === "question") {
+    const question = await prisma.communityQuestion.findUnique({ where: { id }, select: { voiceNoteUrl: true, groupId: true } });
+    audioUrl = question?.voiceNoteUrl;
+    groupId = question?.groupId;
+  } else {
+    const response = await prisma.teacherResponse.findUnique({ where: { id }, select: { voiceNoteUrl: true, question: { select: { groupId: true } } } });
+    audioUrl = response?.voiceNoteUrl;
+    groupId = response?.question.groupId;
+  }
+  if (audioUrl !== communityAudioUrl(kind, id)) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
+  if (groupId) {
+    const membership = await prisma.communityGroupMember.findUnique({
+      where: { groupId_userId: { groupId, userId: session.user.id } },
+      select: { id: true },
+    });
+    if (!membership) return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   const data = await readAudio(communityAudioPath(kind, id));

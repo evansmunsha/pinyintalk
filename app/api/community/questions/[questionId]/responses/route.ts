@@ -11,12 +11,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ que
   const userId = session?.user?.id;
   if (!userId) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
 
-  const teacher = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, isTeacher: true } });
-  if (!teacher?.isTeacher) return NextResponse.json({ error: "Only teachers can reply." }, { status: 403 });
+  const teacher = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, role: true } });
+  if (teacher?.role !== "teacher") return NextResponse.json({ error: "Only approved teachers can reply." }, { status: 403 });
 
   const { questionId } = await params;
-  const question = await prisma.communityQuestion.findUnique({ where: { id: questionId }, select: { id: true } });
+  const question = await prisma.communityQuestion.findUnique({ where: { id: questionId }, select: { id: true, groupId: true } });
   if (!question) return NextResponse.json({ error: "Question not found." }, { status: 404 });
+  if (question.groupId) {
+    const membership = await prisma.communityGroupMember.findUnique({
+      where: { groupId_userId: { groupId: question.groupId, userId } },
+      select: { id: true },
+    });
+    if (!membership) return NextResponse.json({ error: "Join this group before replying." }, { status: 403 });
+  }
 
   let form: FormData;
   try {
@@ -40,6 +47,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ que
     const response = await prisma.teacherResponse.create({
       data: {
         questionId,
+        teacherId: userId,
         teacherName: teacher.name,
         text: parsed.data.text,
         examplePinyin: parsed.data.examplePinyin || null,
@@ -63,6 +71,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ que
     }
 
     revalidatePath("/community");
+    if (question.groupId) revalidatePath(`/community/groups/${question.groupId}`);
     return NextResponse.json({ ok: true, id: response.id });
   } catch (error) {
     if (audioPath) await deleteAudio(audioPath);

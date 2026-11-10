@@ -13,9 +13,10 @@ const LEVELS = [
   { value: "travel", label: T.travel },
 ] as const;
 
-export function AskQuestion() {
+export function AskQuestion({ groupId }: { groupId?: string } = {}) {
   const router = useRouter();
   const [text, setText] = useState("");
+  const [meaning, setMeaning] = useState("");
   const [level, setLevel] = useState<(typeof LEVELS)[number]["value"]>("beginner");
   const [error, setError] = useState("");
   const [voiceNote, setVoiceNote] = useState<Blob | null>(null);
@@ -30,18 +31,21 @@ export function AskQuestion() {
         if (voiceNote) {
           const form = new FormData();
           form.append("text", text);
+          form.append("meaning", meaning);
           form.append("level", level);
+          if (groupId) form.append("groupId", groupId);
           form.append("audio", voiceNote, "voice-note.wav");
           const response = await fetch("/api/community/questions", { method: "POST", body: form });
           const result = (await response.json()) as { error?: string };
           if (!response.ok) throw new Error(result.error ?? "Could not post your question.");
           router.refresh();
         } else {
-          const result = await postQuestionAction({ text, level });
+          const result = await postQuestionAction({ text, level, ...(groupId ? { groupId } : {}) });
           if (!result.ok) throw new Error(result.error);
           router.refresh();
         }
         setText("");
+        setMeaning("");
         setVoiceNote(null);
         setVoiceInputKey((key) => key + 1);
       } catch (e) {
@@ -59,11 +63,18 @@ export function AskQuestion() {
         <p><Bi label={{ py: "yě kěyǐ lù yī duàn duǎn yǔyīn. Qǐng bùyào tiánxiě hànzì huò gèrén xìnxī.", en: "You can also record a short voice note. Please do not include Chinese characters or personal information." }} align="start" /></p>
       </div>
       <label className="block">
-        <Bi label={{ py: "wèn tí", en: "Your question (pinyin or English)" }} align="start" className="mb-1" />
+        <Bi label={{ py: voiceNote ? "nǐ shuō de huà" : "wèn tí", en: voiceNote ? "What you tried to say (pinyin)" : "Your question (pinyin or English)" }} align="start" className="mb-1" />
         <textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} maxLength={500}
           placeholder="Write the phrase and what you want to know…" className="w-full rounded-xl border border-stone-300 p-3 text-lg" />
       </label>
       <VoiceNoteInput key={voiceInputKey} onChange={setVoiceNote} />
+      {voiceNote && (
+        <label className="block">
+          <Bi label={{ py: "yīngwén yìsi", en: "Meaning in English" }} align="start" className="mb-1" />
+          <textarea required value={meaning} onChange={(e) => setMeaning(e.target.value)} rows={2} maxLength={300}
+            className="w-full rounded-xl border border-stone-300 p-3" />
+        </label>
+      )}
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Level">
         {LEVELS.map((l) => (
           <button key={l.value} type="button" role="radio" aria-checked={level === l.value} onClick={() => setLevel(l.value)}
