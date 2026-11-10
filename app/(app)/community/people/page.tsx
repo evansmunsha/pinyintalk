@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Link from "next/link";
 import { Bi } from "@/components/Bi";
 import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
 import { FollowButton } from "@/components/FollowButton";
