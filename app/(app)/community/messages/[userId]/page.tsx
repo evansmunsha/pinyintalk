@@ -4,6 +4,7 @@ import { Bi } from "@/components/Bi";
 import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
 import { DirectThread } from "@/components/DirectThread";
 import { FollowButton } from "@/components/FollowButton";
+import { PrivateThreadModeration } from "@/components/PrivateThreadModeration";
 import { UserAvatar } from "@/components/UserAvatar";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
@@ -19,7 +20,7 @@ export default async function ThreadPage({ params }: { params: Promise<{ userId:
 
   // Only this pair's messages. Opening the thread marks the incoming ones as read.
   await prisma.directMessage.updateMany({ where: { senderId: other.id, recipientId: me, readAt: null }, data: { readAt: new Date() } });
-  const [messages, follows] = await Promise.all([
+  const [messages, follows, acceptedInvite] = await Promise.all([
     prisma.directMessage.findMany({
       where: { OR: [{ senderId: me, recipientId: other.id }, { senderId: other.id, recipientId: me }] },
       orderBy: { createdAt: "asc" },
@@ -27,6 +28,15 @@ export default async function ThreadPage({ params }: { params: Promise<{ userId:
       include: { sender: { select: { name: true, profileImageUrl: true, role: true, nativeSpeaker: true } } },
     }),
     prisma.follow.findUnique({ where: { followerId_followingId: { followerId: me, followingId: other.id } }, select: { id: true } }),
+    prisma.directMessageInvitation.findFirst({
+      where: {
+        OR: [
+          { senderId: me, recipientId: other.id, status: "accepted" },
+          { senderId: other.id, recipientId: me, status: "accepted" },
+        ],
+      },
+      select: { id: true },
+    }),
   ]);
 
   return (
@@ -40,12 +50,16 @@ export default async function ThreadPage({ params }: { params: Promise<{ userId:
           <p className="mt-1"><span className="sr-only">{other.name} </span><span className="inline-block"><CommunityRoleBadge role={other.role} nativeSpeaker={other.nativeSpeaker} /></span></p>
           </div>
         </div>
-        <FollowButton userId={other.id} initial={!!follows} />
+        <div className="flex items-center gap-2">
+          <FollowButton userId={other.id} initial={!!follows} />
+          <PrivateThreadModeration targetUserId={other.id} />
+        </div>
       </div>
+      <p className="rounded-xl bg-amber-50 p-3 text-amber-900"><Bi label={{ py: "sīxiàng liáotiān. bù yào fā xiǎoxī, mìmǎ, huò jiāzhù jìzhě de xìnxī.", en: "Private chat. Never send money, passwords, or personal details." }} align="start" /></p>
       {!follows && <p className="rounded-xl bg-amber-50 p-3 text-amber-900"><Bi label={T.followFirst} align="start" /></p>}
       <DirectThread
         recipientId={other.id}
-        canSend={!!follows}
+        canSend={!!follows || !!acceptedInvite}
         messages={messages.map((m) => ({ id: m.id, mine: m.senderId === me, text: m.text, createdAt: m.createdAt.toISOString(), senderName: m.sender.name, senderImageUrl: m.sender.profileImageUrl, senderRole: m.sender.role, senderNativeSpeaker: m.sender.nativeSpeaker }))}
       />
     </div>
