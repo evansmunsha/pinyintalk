@@ -24,7 +24,8 @@ Open http://localhost:3000. Smoke-test Gemini at `/test-ai`.
 | `NEXTAUTH_URL` | App URL for the current environment. Local is `http://localhost:3000`; Vercel uses your production domain |
 | `NEXT_PUBLIC_SITE_URL` | Public site URL used for canonical links and metadata. Set it yourself for each environment |
 | `GEMINI_API_KEY` | Google Gemini key used on the server for chat, speech recognition, and voice output |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token for saved profile images and voice clips |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob token for profile images and persistent audio. Connect a Blob store to the Vercel project. |
+| `AUDIO_STORAGE_PROVIDER` | Optional local setting: set to `vercel-blob` to use Blob storage outside Vercel; otherwise local development audio stays on disk. |
 
 ## Production database for Vercel
 

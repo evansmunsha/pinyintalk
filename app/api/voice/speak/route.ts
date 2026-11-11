@@ -5,7 +5,7 @@ import { GEMINI_TTS_MODEL } from "@/lib/ai/config";
 import { aiErrorResponse } from "@/lib/gemini";
 import prisma from "@/lib/prisma";
 import { rateLimitWindow } from "@/lib/rate-limit";
-import { readAudio, saveAudio } from "@/lib/storage";
+import { readAudio } from "@/lib/storage";
 import { speechCacheKey, speechCachePath, synthesize } from "@/lib/voice";
 import { voiceAllowed, voiceUserId } from "@/lib/voiceAuth";
 
@@ -39,6 +39,22 @@ function isCompleteWav(data: Buffer) {
     data.toString("ascii", 0, 4) === "RIFF" &&
     data.toString("ascii", 8, 12) === "WAVE" &&
     data.readUInt32LE(4) + 8 === data.length;
+}
+
+function retryAfterMs(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+  const retry = /retry in\s+(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/i.exec(message);
+  if (!retry) return null;
+  const milliseconds = ((Number(retry[1]) || 0) * 3600 + (Number(retry[2]) || 0) * 60 + (Number(retry[3]) || 0)) * 1000;
+  return milliseconds > 0 ? milliseconds : null;
+}
+
+function quotaResponse(blockedUntil: Date) {
+  const retrySeconds = Math.max(1, Math.ceil((blockedUntil.getTime() - Date.now()) / 1000));
+  return NextResponse.json(
+    { error: "Mei's voice is temporarily unavailable because the daily voice limit was reached. Please try again later." },
+    { status: 429, headers: { "Retry-After": String(retrySeconds) } },
+  );
 }
 
 export async function POST(request: Request) {
@@ -92,6 +108,16 @@ export async function POST(request: Request) {
       await attachToTurn();
       console.log("[voice] saved clip used");
       return cachedAudioResponse(savedAudio, true);
+    }
+
+    const blockedUsage = await prisma.geminiVoiceUsage.findFirst({
+      where: { blockedUntil: { gt: new Date() } },
+      orderBy: { blockedUntil: "desc" },
+      select: { blockedUntil: true },
+    });
+    if (blockedUsage?.blockedUntil) {
+      if (clipId) await prisma.speechClip.update({ where: { id: clipId }, data: { status: "failed" } });
+      return quotaResponse(blockedUsage.blockedUntil);
     }
 
     let clip = await prisma.speechClip.findUnique({ where: { cacheKey } });
@@ -161,11 +187,22 @@ export async function POST(request: Request) {
     if (error instanceof VoiceUsageError) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    const retryMs = retryAfterMs(error);
+    const message = error instanceof Error ? error.message : String(error);
+    if (retryMs && /429|quota|rate limit|RESOURCE_EXHAUSTED/i.test(message)) {
+      const blockedUntil = new Date(Date.now() + retryMs);
+      const day = new Date().toISOString().slice(0, 10);
+      await prisma.geminiVoiceUsage.upsert({
+        where: { day },
+        create: { day, count: 0, blockedUntil },
+        update: { blockedUntil },
+      });
+      return quotaResponse(blockedUntil);
+    }
     return aiErrorResponse("voice/speak", GEMINI_TTS_MODEL, error);
   }
 
   try {
-    await saveAudio(audioPath, wav);
     await prisma.speechClip.update({
       where: { id: clipId },
       data: { audioPath, status: "ready" },
