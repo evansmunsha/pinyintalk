@@ -4,12 +4,13 @@ import { useState, useTransition } from "react";
 import { submitCommunityVoiceFeedbackAction } from "@/app/actions/community-feedback";
 import { Bi, ErrorBox } from "@/components/Bi";
 import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
+import { UserAvatar } from "@/components/UserAvatar";
 
 type Vote = {
   id: string;
   rating: string;
   comment: string | null;
-  user: { id: string; name: string; role: string; nativeSpeaker: boolean };
+  user: { id: string; name: string; profileImageUrl: string | null; role: string; nativeSpeaker: boolean };
 };
 
 const RATINGS = [
@@ -71,6 +72,7 @@ export function CommunityVoiceFeedback({
           {votes.map((vote) => (
             <li key={vote.id} className="rounded-lg bg-white p-2 text-sm">
               <div className="flex flex-wrap items-center gap-2">
+                <UserAvatar name={vote.user.name} imageUrl={vote.user.profileImageUrl} size={32} />
                 <span className="font-medium">{vote.user.name}</span>
                 <CommunityRoleBadge role={vote.user.role} nativeSpeaker={vote.user.nativeSpeaker} />
                 <Bi label={{ py: RATINGS.find((rating) => rating.value === vote.rating)?.py ?? "fǎnkuì", en: RATINGS.find((rating) => rating.value === vote.rating)?.en ?? "Feedback" }} />

@@ -4,6 +4,7 @@ import { AskQuestion } from "@/components/AskQuestion";
 import { Bi } from "@/components/Bi";
 import { CommunityPost } from "@/components/CommunityPost";
 import { JoinGroupButton } from "@/components/JoinGroupButton";
+import { UserAvatar } from "@/components/UserAvatar";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 
@@ -14,7 +15,7 @@ export default async function CommunityGroupPage({ params }: { params: Promise<{
     prisma.communityGroup.findUnique({
       where: { id: groupId },
       include: {
-        owner: { select: { name: true } },
+        owner: { select: { name: true, profileImageUrl: true } },
         members: { where: { userId }, select: { id: true } },
       },
     }),
@@ -27,10 +28,10 @@ export default async function CommunityGroupPage({ params }: { params: Promise<{
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
-      user: { select: { name: true, role: true, nativeSpeaker: true } },
+      user: { select: { name: true, profileImageUrl: true, role: true, nativeSpeaker: true } },
       group: { select: { name: true } },
-      responses: { orderBy: { createdAt: "asc" }, include: { teacher: { select: { name: true, role: true, nativeSpeaker: true } } } },
-      voiceFeedback: { orderBy: { createdAt: "asc" }, include: { user: { select: { id: true, name: true, role: true, nativeSpeaker: true } } } },
+      responses: { orderBy: { createdAt: "asc" }, include: { teacher: { select: { name: true, profileImageUrl: true, role: true, nativeSpeaker: true } } } },
+      voiceFeedback: { orderBy: { createdAt: "asc" }, include: { user: { select: { id: true, name: true, profileImageUrl: true, role: true, nativeSpeaker: true } } } },
     },
   }) : [];
 
@@ -40,7 +41,10 @@ export default async function CommunityGroupPage({ params }: { params: Promise<{
       <section className="space-y-2 rounded-2xl bg-white p-4 shadow-sm">
         <h1 className="text-2xl font-semibold">{group.name}</h1>
         <p>{group.description}</p>
-        <p className="text-sm text-stone-500"><Bi label={{ py: `chuàngjiàn zhě ${group.owner.name}`, en: "Group teacher" }} align="start" /></p>
+        <div className="flex items-center gap-2 text-sm text-stone-500">
+          <UserAvatar name={group.owner.name} imageUrl={group.owner.profileImageUrl} size={28} />
+          <Bi label={{ py: `chuàngjiàn zhě ${group.owner.name}`, en: "Group teacher" }} align="start" />
+        </div>
         <JoinGroupButton groupId={group.id} isMember={isMember} />
       </section>
       {isMember && <AskQuestion groupId={group.id} />}

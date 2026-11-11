@@ -16,10 +16,10 @@ export default async function CommunityPage() {
       orderBy: { createdAt: "desc" },
       take: 30,
       include: {
-        user: { select: { name: true, role: true, nativeSpeaker: true } },
+        user: { select: { name: true, profileImageUrl: true, role: true, nativeSpeaker: true } },
         group: { select: { name: true } },
-        responses: { orderBy: { createdAt: "asc" }, include: { teacher: { select: { name: true, role: true, nativeSpeaker: true } } } },
-        voiceFeedback: { orderBy: { createdAt: "asc" }, include: { user: { select: { id: true, name: true, role: true, nativeSpeaker: true } } } },
+        responses: { orderBy: { createdAt: "asc" }, include: { teacher: { select: { name: true, profileImageUrl: true, role: true, nativeSpeaker: true } } } },
+        voiceFeedback: { orderBy: { createdAt: "asc" }, include: { user: { select: { id: true, name: true, profileImageUrl: true, role: true, nativeSpeaker: true } } } },
       },
     }),
   ]);

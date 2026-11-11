@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bi } from "@/components/Bi";
 import { CommunityGroupForm } from "@/components/CommunityGroupForm";
 import { JoinGroupButton } from "@/components/JoinGroupButton";
+import { UserAvatar } from "@/components/UserAvatar";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 
@@ -13,7 +14,7 @@ export default async function CommunityGroupsPage() {
       orderBy: { createdAt: "desc" },
       take: 100,
       include: {
-        owner: { select: { name: true, role: true, nativeSpeaker: true } },
+        owner: { select: { name: true, profileImageUrl: true, role: true, nativeSpeaker: true } },
         members: { where: { userId }, select: { id: true } },
         _count: { select: { members: true, posts: true } },
       },
@@ -30,9 +31,10 @@ export default async function CommunityGroupsPage() {
           <Link href={`/community/groups/${group.id}`} className="block">
             <h2 className="text-xl font-semibold">{group.name}</h2>
             <p className="mt-1 text-stone-700">{group.description}</p>
-            <p className="mt-2 text-sm text-stone-500">
+            <div className="mt-2 flex items-center gap-2 text-sm text-stone-500">
+              <UserAvatar name={group.owner.name} imageUrl={group.owner.profileImageUrl} size={28} />
               <Bi label={{ py: `lǎoshī ${group.owner.name}`, en: `${group._count.members} members · ${group._count.posts} posts` }} align="start" />
-            </p>
+            </div>
           </Link>
           <JoinGroupButton groupId={group.id} isMember={group.members.length > 0} />
         </article>

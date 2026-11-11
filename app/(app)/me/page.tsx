@@ -3,6 +3,7 @@ import { signOutAction } from "@/app/actions/auth";
 import { Bi } from "@/components/Bi";
 import { EnglishAfterToggle } from "@/components/EnglishAfterToggle";
 import { CommunityProfileForm } from "@/components/CommunityProfileForm";
+import { ProfileImageUpload } from "@/components/ProfileImageUpload";
 import { isMistakeReportAdmin } from "@/lib/admin";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
@@ -12,7 +13,7 @@ export default async function MePage() {
   const userId = await requireUserId();
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, email: true, englishAfterChinese: true, role: true, nativeSpeaker: true },
+    select: { name: true, email: true, profileImageUrl: true, englishAfterChinese: true, role: true, nativeSpeaker: true },
   });
   const isAdmin = await isMistakeReportAdmin(userId);
 
@@ -21,6 +22,7 @@ export default async function MePage() {
       <h1 className="text-2xl"><Bi label={T.me} align="start" /></h1>
       <div className="rounded-2xl bg-white p-4 shadow-sm">
         <p className="text-sm text-teal-700"><Bi label={T.account} align="start" /></p>
+        {user && <ProfileImageUpload name={user.name} initialImageUrl={user.profileImageUrl} />}
         <p className="mt-1 text-xl font-semibold">{user?.name}</p>
         <p className="break-all text-stone-600">{user?.email}</p>
       </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bi } from "@/components/Bi";
 import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
 import { FollowButton } from "@/components/FollowButton";
+import { UserAvatar } from "@/components/UserAvatar";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 import { T, followerCounts } from "@/lib/ui-text";
@@ -16,6 +17,7 @@ export default async function PeoplePage() {
     select: {
       id: true,
       name: true,
+      profileImageUrl: true,
       role: true,
       nativeSpeaker: true,
       _count: { select: { followers: true, following: true } },
@@ -30,10 +32,13 @@ export default async function PeoplePage() {
       {people.length === 0 && <p className="rounded-2xl bg-white p-6 text-center shadow-sm"><Bi label={T.noPeople} /></p>}
       {people.map((p) => (
         <div key={p.id} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm">
-          <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-3">
+            <UserAvatar name={p.name} imageUrl={p.profileImageUrl} />
+            <div className="min-w-0">
             <p className="truncate text-xl font-semibold">{p.name}</p>
             <CommunityRoleBadge role={p.role} nativeSpeaker={p.nativeSpeaker} />
             <p className="text-sm text-stone-500"><Bi label={followerCounts(p._count.followers, p._count.following)} align="start" /></p>
+            </div>
           </div>
           <div className="flex shrink-0 flex-col gap-2">
             <FollowButton userId={p.id} initial={p.followers.length > 0} />

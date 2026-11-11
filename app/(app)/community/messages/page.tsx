@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bi } from "@/components/Bi";
 import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
 import { Pinyin } from "@/components/Pinyin";
+import { UserAvatar } from "@/components/UserAvatar";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
 import { T } from "@/lib/ui-text";
@@ -14,17 +15,18 @@ export default async function MessagesPage() {
     orderBy: { createdAt: "desc" },
     take: 200,
     include: {
-      sender: { select: { id: true, name: true, role: true, nativeSpeaker: true } },
-      recipient: { select: { id: true, name: true, role: true, nativeSpeaker: true } },
+      sender: { select: { id: true, name: true, profileImageUrl: true, role: true, nativeSpeaker: true } },
+      recipient: { select: { id: true, name: true, profileImageUrl: true, role: true, nativeSpeaker: true } },
     },
   });
 
-  const threads = new Map<string, { id: string; name: string; role: string; nativeSpeaker: boolean; last: string; unread: number }>();
+  const threads = new Map<string, { id: string; name: string; profileImageUrl: string | null; role: string; nativeSpeaker: boolean; last: string; unread: number }>();
   for (const m of recent) {
     const other = m.senderId === me ? m.recipient : m.sender;
     const t = threads.get(other.id) ?? {
       id: other.id,
       name: other.name,
+      profileImageUrl: other.profileImageUrl,
       role: other.role,
       nativeSpeaker: other.nativeSpeaker,
       last: m.text,
@@ -46,7 +48,8 @@ export default async function MessagesPage() {
       )}
       {[...threads.values()].map((t) => (
         <Link key={t.id} href={`/community/messages/${t.id}`} className="flex items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-sm">
-          <span className="min-w-0">
+          <UserAvatar name={t.name} imageUrl={t.profileImageUrl} />
+          <span className="min-w-0 flex-1">
             <span className="block truncate text-xl font-semibold">{t.name}</span>
             <span className="block"><CommunityRoleBadge role={t.role} nativeSpeaker={t.nativeSpeaker} /></span>
             <span className="block truncate text-stone-600"><Pinyin text={t.last} /></span>

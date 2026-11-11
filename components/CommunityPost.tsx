@@ -5,6 +5,7 @@ import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
 import { CommunityVoiceFeedback } from "@/components/CommunityVoiceFeedback";
 import { Pinyin } from "@/components/Pinyin";
 import { TeacherReplyForm } from "@/components/TeacherReplyForm";
+import { UserAvatar } from "@/components/UserAvatar";
 
 type CommunityPostData = {
   id: string;
@@ -14,7 +15,7 @@ type CommunityPostData = {
   voiceNoteUrl: string | null;
   groupId: string | null;
   createdAt: Date;
-  user: { name: string; role: string; nativeSpeaker: boolean };
+  user: { name: string; profileImageUrl: string | null; role: string; nativeSpeaker: boolean };
   group: { name: string } | null;
   responses: Array<{
     id: string;
@@ -23,13 +24,13 @@ type CommunityPostData = {
     text: string;
     examplePinyin: string | null;
     voiceNoteUrl: string | null;
-    teacher: { name: string; role: string; nativeSpeaker: boolean } | null;
+    teacher: { name: string; profileImageUrl: string | null; role: string; nativeSpeaker: boolean } | null;
   }>;
   voiceFeedback: Array<{
     id: string;
     rating: string;
     comment: string | null;
-    user: { id: string; name: string; role: string; nativeSpeaker: boolean };
+    user: { id: string; name: string; profileImageUrl: string | null; role: string; nativeSpeaker: boolean };
   }>;
 };
 
@@ -52,6 +53,7 @@ export function CommunityPost({
     <article className="space-y-3 rounded-2xl bg-white p-4 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-stone-600">
         <div className="flex flex-wrap items-center gap-2">
+          <UserAvatar name={question.user.name} imageUrl={question.user.profileImageUrl} size={36} />
           <span className="font-medium text-stone-800">{question.user.name}</span>
           <CommunityRoleBadge role={question.user.role} nativeSpeaker={question.user.nativeSpeaker} />
         </div>
@@ -73,6 +75,7 @@ export function CommunityPost({
         question.responses.map((response) => (
           <div key={response.id} className="space-y-2 rounded-xl bg-teal-50 p-3">
             <div className="flex flex-wrap items-center gap-2">
+              <UserAvatar name={response.teacher?.name ?? response.teacherName} imageUrl={response.teacher?.profileImageUrl ?? null} size={36} />
               <span className="font-medium">{response.teacher?.name ?? response.teacherName}</span>
               <CommunityRoleBadge role={response.teacher?.role ?? "teacher"} nativeSpeaker={response.teacher?.nativeSpeaker ?? false} />
             </div>
