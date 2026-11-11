@@ -3,6 +3,7 @@ import { signOutAction } from "@/app/actions/auth";
 import { Bi } from "@/components/Bi";
 import { EnglishAfterToggle } from "@/components/EnglishAfterToggle";
 import { CommunityProfileForm } from "@/components/CommunityProfileForm";
+import { PrivateChatSettingsToggle } from "@/components/PrivateChatSettingsToggle";
 import { ProfileImageUpload } from "@/components/ProfileImageUpload";
 import { isMistakeReportAdmin } from "@/lib/admin";
 import prisma from "@/lib/prisma";
@@ -13,7 +14,7 @@ export default async function MePage() {
   const userId = await requireUserId();
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, email: true, profileImageUrl: true, englishAfterChinese: true, role: true, nativeSpeaker: true },
+    select: { name: true, email: true, profileImageUrl: true, englishAfterChinese: true, role: true, nativeSpeaker: true, chatInvitesEnabled: true },
   });
   const isAdmin = await isMistakeReportAdmin(userId);
 
@@ -30,6 +31,7 @@ export default async function MePage() {
         <h2 className="text-lg"><Bi label={T.settings} align="start" /></h2>
         <EnglishAfterToggle initial={user?.englishAfterChinese ?? true} />
         {user && <CommunityProfileForm role={user.role} nativeSpeaker={user.nativeSpeaker} />}
+        {user && <PrivateChatSettingsToggle initial={user.chatInvitesEnabled} />}
         <p className="px-1 text-stone-500"><Bi label={T.englishAfterHelp} align="start" /></p>
       </section>
       {isAdmin && (

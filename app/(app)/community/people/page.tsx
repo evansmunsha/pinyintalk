@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bi } from "@/components/Bi";
 import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
 import { FollowButton } from "@/components/FollowButton";
+import { PrivateChatInviteButton } from "@/components/PrivateChatInviteButton";
 import { UserAvatar } from "@/components/UserAvatar";
 import prisma from "@/lib/prisma";
 import { requireUserId } from "@/lib/session";
@@ -42,6 +43,7 @@ export default async function PeoplePage() {
           </div>
           <div className="flex shrink-0 flex-col gap-2">
             <FollowButton userId={p.id} initial={p.followers.length > 0} />
+            <PrivateChatInviteButton userId={p.id} />
             <Link href={`/community/messages/${p.id}`} className="flex min-h-11 items-center justify-center rounded-full border border-stone-300 px-4"><Bi label={T.message} /></Link>
           </div>
         </div>

@@ -4,11 +4,13 @@ import { CommunityQuestionReport } from "@/components/CommunityQuestionReport";
 import { CommunityRoleBadge } from "@/components/CommunityRoleBadge";
 import { CommunityVoiceFeedback } from "@/components/CommunityVoiceFeedback";
 import { Pinyin } from "@/components/Pinyin";
+import { PrivateChatInviteButton } from "@/components/PrivateChatInviteButton";
 import { TeacherReplyForm } from "@/components/TeacherReplyForm";
 import { UserAvatar } from "@/components/UserAvatar";
 
 type CommunityPostData = {
   id: string;
+  userId: string;
   text: string;
   meaning: string | null;
   level: string;
@@ -56,6 +58,7 @@ export function CommunityPost({
           <UserAvatar name={question.user.name} imageUrl={question.user.profileImageUrl} size={36} />
           <span className="font-medium text-stone-800">{question.user.name}</span>
           <CommunityRoleBadge role={question.user.role} nativeSpeaker={question.user.nativeSpeaker} />
+          <PrivateChatInviteButton userId={question.userId} />
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {question.group && <span className="rounded-full bg-teal-50 px-3 py-1"><Bi label={{ py: question.group.name, en: "Group post" }} /></span>}
@@ -78,6 +81,7 @@ export function CommunityPost({
               <UserAvatar name={response.teacher?.name ?? response.teacherName} imageUrl={response.teacher?.profileImageUrl ?? null} size={36} />
               <span className="font-medium">{response.teacher?.name ?? response.teacherName}</span>
               <CommunityRoleBadge role={response.teacher?.role ?? "teacher"} nativeSpeaker={response.teacher?.nativeSpeaker ?? false} />
+              {response.teacherId && <PrivateChatInviteButton userId={response.teacherId} />}
             </div>
             <p className="text-teal-800"><Bi label={{ py: "lǎoshī huífù", en: "Teacher reply" }} align="start" /></p>
             <p className="break-words">{response.text}</p>

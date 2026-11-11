@@ -9,7 +9,7 @@ import { T } from "@/lib/ui-text";
 
 export default async function CommunityPage() {
   const userId = await requireUserId();
-  const [user, questions] = await Promise.all([
+  const [user, questions, pendingInvites] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId }, select: { role: true, nativeSpeaker: true } }),
     prisma.communityQuestion.findMany({
       where: { groupId: null },
@@ -22,6 +22,7 @@ export default async function CommunityPage() {
         voiceFeedback: { orderBy: { createdAt: "asc" }, include: { user: { select: { id: true, name: true, profileImageUrl: true, role: true, nativeSpeaker: true } } } },
       },
     }),
+    prisma.directMessageInvitation.count({ where: { recipientId: userId, status: "pending" } }),
   ]);
 
   return (
@@ -29,7 +30,8 @@ export default async function CommunityPage() {
       <h1 className="text-2xl"><Bi label={T.community} align="start" /></h1>
       <div className="grid grid-cols-2 gap-2">
         <Link href="/community/people" className="flex min-h-12 items-center justify-center rounded-xl bg-white shadow-sm"><Bi label={T.people} /></Link>
-        <Link href="/community/messages" className="flex min-h-12 items-center justify-center rounded-xl bg-white shadow-sm"><Bi label={T.messages} /></Link>
+        <Link href="/community/messages" className="relative flex min-h-12 items-center justify-center rounded-xl bg-white shadow-sm"><Bi label={T.messages} />{pendingInvites > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-teal-600 px-2 py-0.5 text-xs text-white">{pendingInvites}</span>}</Link>
+        <Link href="/community/inbox" className="col-span-2 flex min-h-12 items-center justify-center rounded-xl bg-white shadow-sm"><Bi label={{ py: "xìnxiǎn", en: "Inbox" }} /></Link>
         <Link href="/community/groups" className="col-span-2 flex min-h-12 items-center justify-center rounded-xl bg-white shadow-sm"><Bi label={{ py: "xuéxí xiǎozǔ", en: "Learning groups" }} /></Link>
         <Link href="/community/teacher-application" className="col-span-2 flex min-h-12 items-center justify-center rounded-xl bg-white shadow-sm"><Bi label={{ py: "shēnqǐng chéngwéi lǎoshī", en: "Apply to teach" }} /></Link>
       </div>
