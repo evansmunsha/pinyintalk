@@ -1,5 +1,4 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
 
 const securityHeaders = {
   "X-Frame-Options": "DENY",
@@ -9,9 +8,7 @@ const securityHeaders = {
   "X-DNS-Prefetch-Control": "off",
 };
 
-export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-
+export function applySecurityHeaders(request: NextRequest, response: NextResponse) {
   Object.entries(securityHeaders).forEach(([key, value]) => {
     response.headers.set(key, value);
   });
@@ -22,9 +19,3 @@ export function middleware(request: NextRequest) {
 
   return response;
 }
-
-export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\.(?:png|jpg|jpeg|gif|svg|webp|ico|pdf|txt|xml|json|css|js|map)$).*)",
-  ],
-};

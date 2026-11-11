@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { applySecurityHeaders } from "@/lib/security-headers";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -12,19 +13,21 @@ export function proxy(request: NextRequest) {
   const isAuthPage = pathname.startsWith("/signin") || pathname.startsWith("/signup");
   const isPublicPage = pathname === "/" || pathname === "/test-ai" || pathname === "/test-voice";
 
-  // If user is on auth page and already logged in, redirect to dashboard
+  let response: NextResponse;
+
   if (isAuthPage && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    response = NextResponse.redirect(new URL("/dashboard", request.url));
+  } else if (!pathname.startsWith("/api/") && !isLoggedIn && !isPublicPage && !isAuthPage) {
+    response = NextResponse.redirect(new URL("/signin", request.url));
+  } else {
+    response = NextResponse.next();
   }
 
-  // If user is not logged in and trying to access protected route, redirect to signin
-  if (!isLoggedIn && !isPublicPage && !isAuthPage) {
-    return NextResponse.redirect(new URL("/signin", request.url));
-  }
-
-  return NextResponse.next();
+  return applySecurityHeaders(request, response);
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|manifest.webmanifest).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|pdf|txt|xml|json|css|js|map)$).*)",
+  ],
 };
