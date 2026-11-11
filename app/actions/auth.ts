@@ -10,6 +10,10 @@ const signUpSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  acceptTerms: z.preprocess(
+    (value) => (value === "on" || value === true ? "on" : undefined),
+    z.literal("on")
+  ),
 });
 
 const signInSchema = z.object({
@@ -30,6 +34,7 @@ export async function signUpAction(
     name: formData.get("name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    acceptTerms: formData.get("acceptTerms"),
   });
 
   if (!validatedFields.success) {

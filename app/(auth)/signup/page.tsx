@@ -39,6 +39,16 @@ export default function SignUpPage() {
           <Bi label={T.password} align="start" />
           <input name="password" type="password" required minLength={8} disabled={pending} autoComplete="new-password" className={input} />
         </label>
+        <label className="flex items-start gap-3 rounded-xl border border-stone-200 bg-stone-50 p-3 text-sm text-stone-700">
+          <input name="acceptTerms" type="checkbox" required disabled={pending} className="mt-1 h-4 w-4 rounded border-stone-300 text-teal-600 focus:ring-teal-500" />
+          <span className="flex-1">
+            <Bi label={T.acceptTerms} align="start" />
+            <span className="mt-1 flex flex-wrap gap-2 text-xs text-stone-500">
+              <Link href="/legal/terms" className="font-medium text-teal-700 underline-offset-2 hover:underline"> <Bi label={T.terms} /></Link>
+              <Link href="/legal/privacy" className="font-medium text-teal-700 underline-offset-2 hover:underline"> <Bi label={T.privacyPolicy} /></Link>
+            </span>
+          </span>
+        </label>
         <button disabled={pending} className="min-h-12 w-full rounded-xl bg-teal-600 text-lg text-white disabled:opacity-60">
           <Bi label={pending ? T.creating : T.signUp} />
         </button>

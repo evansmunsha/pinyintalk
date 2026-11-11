@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import Navigation from "@/components/Navigation";
 import { PwaInstallButton } from "@/components/PwaInstallButton";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ToneLegend } from "@/components/ToneLegend";
 import { requireUserId } from "@/lib/session";
+
+export const metadata: Metadata = {
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   await requireUserId();
@@ -15,6 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
         {children}
       </main>
+      <SiteFooter />
     </div>
   );
 }

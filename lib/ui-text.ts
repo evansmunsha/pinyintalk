@@ -47,6 +47,12 @@ export const T = {
   haveAccount: L("Yǐjīng yǒu zhànghào?", "Already have an account?"),
   iHaveAccount: L("Wǒ yǒu zhànghào le", "I already have an account"),
   getStarted: L("Kāishǐ ba", "Get started"),
+  acceptTerms: L("Wǒ yuēdéng liǎojiě bìng jiēshòu Pinyin Talk de fúwù tiákuǎn", "I agree to the terms and rules"),
+  privacyPolicy: L("Yǐn sī zhèngcè", "Privacy policy"),
+  terms: L("Fúwù tiákuǎn", "Terms of use"),
+  communityRules: L("Shèqū guīzé", "Community rules"),
+  cookieNotice: L("Qiǎokèbiànzhǐ", "Cookie notice"),
+  legalDraft: L("Gǎi yìng yóu lǜshī shāngchá", "Draft for lawyer review"),
   tagline: L("Bǎ nǐ huì de Zhōngwén jì láo", "Keep the Mandarin you know"),
   tagline2: L("Tīng yī tīng, shuō yī shuō, hé Mei liáotiān", "Hear it, say it, chat with Mei"),
 

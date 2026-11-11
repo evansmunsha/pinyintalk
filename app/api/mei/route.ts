@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { LIMITS } from "@/lib/config";
 import { GEMINI_MODEL } from "@/lib/ai/config";
 import { aiErrorResponse } from "@/lib/gemini";
+import { rateLimitWindow } from "@/lib/rate-limit";
 import { askMei } from "@/lib/mei/reply";
 
 // The client sends ONLY the chat messages. Model and system prompt stay on the server.
@@ -22,6 +23,15 @@ export async function POST(request: Request) {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+
+  const ipKey = request.headers.get("x-forwarded-for") ?? "local";
+  const meiRateLimit = rateLimitWindow(`mei:${ipKey}`, 30, 60_000);
+  if (!meiRateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many Mei requests. Please try again in a moment." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(meiRateLimit.resetMs / 1000)) } }
+    );
+  }
 
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success || parsed.data.messages.at(-1)?.role !== "user") {

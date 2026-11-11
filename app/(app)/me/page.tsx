@@ -32,6 +32,9 @@ export default async function MePage() {
         <EnglishAfterToggle initial={user?.englishAfterChinese ?? true} />
         {user && <CommunityProfileForm role={user.role} nativeSpeaker={user.nativeSpeaker} />}
         {user && <PrivateChatSettingsToggle initial={user.chatInvitesEnabled} />}
+        <Link href="/about" className="flex min-h-12 items-center justify-center rounded-xl bg-white shadow-sm">
+          <Bi label={{ py: "guànyú wǒmen", en: "About" }} />
+        </Link>
         <p className="px-1 text-stone-500"><Bi label={T.englishAfterHelp} align="start" /></p>
       </section>
       {isAdmin && (

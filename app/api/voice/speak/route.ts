@@ -4,6 +4,7 @@ import { z } from "zod";
 import { GEMINI_TTS_MODEL } from "@/lib/ai/config";
 import { aiErrorResponse } from "@/lib/gemini";
 import prisma from "@/lib/prisma";
+import { rateLimitWindow } from "@/lib/rate-limit";
 import { readAudio, saveAudio } from "@/lib/storage";
 import { speechCacheKey, speechCachePath, synthesize } from "@/lib/voice";
 import { voiceAllowed, voiceUserId } from "@/lib/voiceAuth";
@@ -42,6 +43,16 @@ function isCompleteWav(data: Buffer) {
 
 export async function POST(request: Request) {
   if (!(await voiceAllowed())) return NextResponse.json({ error: "Please sign in." }, { status: 401 });
+
+  const ipKey = request.headers.get("x-forwarded-for") ?? "local";
+  const speechRateLimit = rateLimitWindow(`voice-speak:${ipKey}`, 20, 60_000);
+  if (!speechRateLimit.allowed) {
+    return NextResponse.json(
+      { error: "Too many voice requests. Please try again in a moment." },
+      { status: 429, headers: { "Retry-After": String(Math.ceil(speechRateLimit.resetMs / 1000)) } }
+    );
+  }
+
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid text." }, { status: 400 });
 

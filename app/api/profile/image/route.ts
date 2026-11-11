@@ -3,6 +3,7 @@ import { put, del } from "@vercel/blob";
 import sharp from "sharp";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { rateLimitWindow } from "@/lib/rate-limit";
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024;
 const MIME_FORMATS: Record<string, string> = {
@@ -15,6 +16,12 @@ export async function POST(request: Request) {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return Response.json({ error: "Please sign in first." }, { status: 401 });
+
+  const ipKey = request.headers.get("x-forwarded-for") ?? "local";
+  const rateLimit = rateLimitWindow(`profile-image:${ipKey}`, 10, 60_000);
+  if (!rateLimit.allowed) {
+    return Response.json({ error: "Too many image uploads. Please wait a moment." }, { status: 429, headers: { "Retry-After": String(Math.ceil(rateLimit.resetMs / 1000)) } });
+  }
 
   const contentLength = Number(request.headers.get("content-length"));
   if (Number.isFinite(contentLength) && contentLength > MAX_FILE_SIZE + 65_536) {
