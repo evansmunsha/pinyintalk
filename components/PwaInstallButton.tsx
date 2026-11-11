@@ -8,21 +8,21 @@ type BeforeInstallPromptEvent = Event & {
   userChoice: Promise<{ outcome: "accepted" | "dismissed"; }>; 
 };
 
+function canOfferInstall() {
+  if (typeof window === "undefined") return false;
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+  return !isStandalone && (isIOS || "beforeinstallprompt" in window);
+}
+
 export function PwaInstallButton() {
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [canInstall, setCanInstall] = useState(false);
+  const [canInstall, setCanInstall] = useState(canOfferInstall);
   const [showIosInstructions, setShowIosInstructions] = useState(false);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-
-    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
-
-    if (!isStandalone && (isIOS || "beforeinstallprompt" in window)) {
-      setCanInstall(true);
-    }
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
